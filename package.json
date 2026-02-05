@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "tiktok-live-connector": "^2.1.1-beta1"
+  },
+  "name": "tiktok",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
