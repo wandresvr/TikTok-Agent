@@ -2,7 +2,7 @@
 const { getTop } = require('../state/liveState');
 
 function startNotifier() {
-  setInterval(() => {
+  const intervalId = setInterval(() => {
     const top = getTop(3);
     if (!top.length) return;
 
@@ -12,6 +12,14 @@ function startNotifier() {
       console.log(`${i + 1}. ${song} (${data.count})`);
     });
   }, 30000);
+
+  // Retornar función para limpiar el intervalo
+  return {
+    stop: () => {
+      console.log('🛑 Deteniendo notificador...');
+      clearInterval(intervalId);
+    }
+  };
 }
 
 module.exports = { startNotifier };
