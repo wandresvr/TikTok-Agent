@@ -135,13 +135,14 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
       await waitForRateLimit();
       
       console.log(`📡 [makeRequestWithRetry] Enviando petición a Ollama...`);
+      const timeoutMs = parseInt(process.env.OLLAMA_RESPONSE_TIMEOUT_MS || '0', 10) || 0;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // Timeout de 15 segundos
+      const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
 
       const res = await fetch('http://localhost:11434/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
+        signal: timeoutMs > 0 ? controller.signal : undefined,
         body: JSON.stringify({
           model: model,
           stream: false,
@@ -167,7 +168,7 @@ Genera una respuesta natural y breve para este mensaje.`
         })
       });
 
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
 
       console.log(`📥 [makeRequestWithRetry] Respuesta recibida: ${res.status} ${res.statusText}`);
 
@@ -245,7 +246,8 @@ Genera una respuesta natural y breve para este mensaje.`
           continue;
         }
         if (!responseErrorShown) {
-          console.error('⏱️ Timeout: Ollama tardó demasiado en responder (>15s)');
+          const timeoutMs = parseInt(process.env.OLLAMA_RESPONSE_TIMEOUT_MS || '0', 10) || 0;
+          console.error(`⏱️ Timeout: Ollama tardó demasiado en responder${timeoutMs > 0 ? ` (>${timeoutMs / 1000}s)` : ''}. Puedes aumentar OLLAMA_RESPONSE_TIMEOUT_MS o poner 0 para sin límite.`);
           responseErrorShown = true;
         }
       }

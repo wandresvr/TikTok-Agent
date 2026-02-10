@@ -1,5 +1,8 @@
 // listener/tiktokListener.js
 const { TikTokLiveConnection, WebcastEvent } = require('tiktok-live-connector');
+const browserSender = require('../responder/browserSender');
+
+const USE_BROWSER_SENDER = process.env.USE_BROWSER_SENDER === 'true' || process.env.USE_BROWSER_SENDER === '1';
 
 function startListener(username, onMessage, options = {}) {
   // Debug: Verificar opciones recibidas
@@ -7,6 +10,9 @@ function startListener(username, onMessage, options = {}) {
   console.log(`   sessionId: ${options.sessionId ? `${options.sessionId.substring(0, 10)}...` : 'no configurado'}`);
   console.log(`   ttTargetIdc: ${options.ttTargetIdc || 'no configurado'}`);
   console.log(`   Nota: signApiKey se configura globalmente con SignConfig (no en options)`);
+  if (USE_BROWSER_SENDER) {
+    console.log(`   📱 Envío de mensajes: screen scraping (navegador)`);
+  }
   
   const tiktok = new TikTokLiveConnection(username, options);
   let reconnectTimer = null;
@@ -121,11 +127,10 @@ function startListener(username, onMessage, options = {}) {
 
   // Retornar objeto con funciones para cerrar y enviar mensajes
   return {
-    close: () => {
+    close: async () => {
       isClosing = true;
       console.log('🔌 Cerrando conexión de TikTok...');
       
-      // Limpiar timer de reconexión
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
         reconnectTimer = null;
@@ -134,7 +139,14 @@ function startListener(username, onMessage, options = {}) {
       try {
         tiktok.disconnect();
       } catch (err) {
-        // Ignorar errores al desconectar
+        // Ignorar
+      }
+      if (USE_BROWSER_SENDER) {
+        try {
+          await browserSender.close();
+        } catch (e) {
+          // Ignorar
+        }
       }
     },
     sendMessage: async (message) => {
@@ -143,7 +155,13 @@ function startListener(username, onMessage, options = {}) {
           console.warn('⚠️ No conectado, no se puede enviar mensaje');
           return false;
         }
-        // Verificar si tiene autenticación
+
+        // Envío por screen scraping (navegador): no requiere Euler premium
+        if (USE_BROWSER_SENDER) {
+          return await browserSender.sendMessage(username, message);
+        }
+
+        // Envío por API Euler (requiere plan premium)
         if (!connectionOptions.sessionId || !connectionOptions.ttTargetIdc) {
           console.warn('⚠️ No hay credenciales configuradas, no se puede enviar mensaje');
           return false;
@@ -154,22 +172,21 @@ function startListener(username, onMessage, options = {}) {
         const errorMsg = err?.message || err?.toString() || 'Error desconocido';
         console.error(`❌ Error enviando mensaje: ${errorMsg}`);
         
-        // Detectar error de premium/Euler Stream
-        if (errorMsg.includes('Premium Feature') || errorMsg.includes('eulerstream.com') || errorMsg.includes('401')) {
+        // Detectar error de premium/Euler Stream (solo si no estamos usando browser)
+        if (!USE_BROWSER_SENDER && (errorMsg.includes('Premium Feature') || errorMsg.includes('eulerstream.com') || errorMsg.includes('401'))) {
           console.error('\n' + '='.repeat(60));
           console.error('💳 ENVIAR MENSAJES REQUIERE PLAN PREMIUM');
           console.error('='.repeat(60));
-          console.error('📝 Para enviar mensajes en TikTok Live necesitas:');
-          console.error('   1. Una API key de Euler Stream');
-          console.error('   2. Un plan premium de Euler Stream');
+          console.error('📝 Opciones:');
+          console.error('   1. Plan premium de Euler Stream (EULER_API_KEY + pago)');
+          console.error('   2. Screen scraping gratuito: USE_BROWSER_SENDER=true en .env');
           console.error('');
-          console.error('🔗 Obtén tu API key en: https://www.eulerstream.com/pricing');
-          console.error('💡 Configura EULER_API_KEY en tu archivo .env');
+          console.error('🔗 Euler: https://www.eulerstream.com/pricing');
+          console.error('💡 Browser: añade USE_BROWSER_SENDER=true y inicia sesión en el perfil del navegador');
           console.error('='.repeat(60) + '\n');
           return false;
         }
         
-        // Si el error indica falta de autenticación
         if (errorMsg.toLowerCase().includes('auth') || errorMsg.toLowerCase().includes('session')) {
           console.error('💡 Verifica que las credenciales en .env sean correctas');
         }

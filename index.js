@@ -85,6 +85,10 @@ console.log('🚀 INICIANDO TIKTOK LIVE AGENT');
 console.log('='.repeat(60));
 console.log(`📱 Usuario objetivo: @${TIKTOK_USERNAME}`);
 console.log(`🌐 URL del live: https://www.tiktok.com/@${TIKTOK_USERNAME}/live`);
+if (process.env.USE_BROWSER_SENDER === 'true' || process.env.USE_BROWSER_SENDER === '1') {
+  console.log(`📱 Envío de mensajes: screen scraping (navegador). Perfil: ${process.env.BROWSER_USER_DATA_DIR || './browser-profile'}`);
+  console.log(`   💡 Primera vez: se abrirá el navegador; inicia sesión en TikTok y luego los mensajes se enviarán desde ahí.`);
+}
 
 // API Key de Euler Stream (requerida para enviar mensajes)
 // Según la documentación oficial: https://www.eulerstream.com/docs/api-key-usage/nodejs
@@ -154,9 +158,11 @@ setTikTokConnection(tiktokConnection);
 const notifier = startNotifier();
 
 // Función para cerrar todas las conexiones
-function cleanup() {
+async function cleanup() {
   console.log('\n🛑 Cerrando conexiones...');
-  tiktokConnection.close();
+  if (tiktokConnection && typeof tiktokConnection.close === 'function') {
+    await tiktokConnection.close();
+  }
   notifier.stop();
   console.log('✅ Conexiones cerradas. Saliendo...');
   process.exit(0);
