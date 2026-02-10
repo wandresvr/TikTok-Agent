@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "dotenv": "^17.2.4",
     "node-fetch": "^3.3.2",
     "tiktok-live-connector": "^2.1.1-beta1"
   },
