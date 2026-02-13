@@ -10,10 +10,15 @@ if (dotenvResult.error) {
   console.log('✅ Archivo .env cargado correctamente\n');
 }
 
+if (process.env.ENABLE_AUTO_SEND === 'false') {
+  console.log('🔇 Envío automático de mensajes deshabilitado (ENABLE_AUTO_SEND=false)\n');
+}
+
 const { SignConfig } = require('tiktok-live-connector');
 const { startListener } = require('./listener/tiktokListener');
 const { handleMessage, setTikTokConnection } = require('./processor/router');
 const { startNotifier } = require('./responder/notifier');
+const { generateResponse } = require('./llm/responseGenerator');
 
 // Verificar disponibilidad de Ollama al inicio
 async function checkOllamaOnStart() {
@@ -157,9 +162,35 @@ setTikTokConnection(tiktokConnection);
 
 const notifier = startNotifier();
 
+// Respuesta periódica de Ollama cada N minutos (mantiene actividad en el live)
+const periodicIntervalMs = parseInt(process.env.OLLAMA_PERIODIC_INTERVAL_MS || '120000', 10) || 0;
+let periodicIntervalId = null;
+if (periodicIntervalMs > 0) {
+  const enableAutoSend = process.env.ENABLE_AUTO_SEND !== 'false';
+  periodicIntervalId = setInterval(async () => {
+    if (!tiktokConnection) return;
+    try {
+      const response = await generateResponse(
+        'Genera un mensaje breve para el live: saludo, pide canciones o anima con tap tap. Una sola línea, máximo 60 caracteres.',
+        {}
+      );
+      if (response && enableAutoSend && tiktokConnection.sendMessage) {
+        const sent = await tiktokConnection.sendMessage(response);
+        if (sent) console.log(`⏱️ [Periódico cada ${periodicIntervalMs / 60000} min] Enviado: "${response.substring(0, 50)}..."`);
+      } else if (response) {
+        console.log(`⏱️ [Periódico] Respuesta (no enviada): "${response.substring(0, 50)}..."`);
+      }
+    } catch (e) {
+      console.warn('⏱️ [Periódico] Error:', e.message);
+    }
+  }, periodicIntervalMs);
+  console.log(`⏱️ Ollama responderá cada ${periodicIntervalMs / 60000} min (OLLAMA_PERIODIC_INTERVAL_MS=${periodicIntervalMs})`);
+}
+
 // Función para cerrar todas las conexiones
 async function cleanup() {
   console.log('\n🛑 Cerrando conexiones...');
+  if (periodicIntervalId) clearInterval(periodicIntervalId);
   if (tiktokConnection && typeof tiktokConnection.close === 'function') {
     await tiktokConnection.close();
   }

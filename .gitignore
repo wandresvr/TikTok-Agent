@@ -1,0 +1,17 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (secretos)
+.env
+
+# Perfiles de navegador (bloqueados en uso, datos sensibles)
+browser-profile/
+chrome-profile/
+
+# Sesión / datos locales
+session.json
+
+# Logs y temporales
+*.log
+.DS_Store
+Thumbs.db
