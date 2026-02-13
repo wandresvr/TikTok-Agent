@@ -2,6 +2,7 @@
 
 // Cache para evitar mostrar el mismo error muchas veces
 let responseErrorShown = false;
+let configuredModelUnavailableWarned = false;
 let availableModel = null;
 
 // Rate limiting: tiempo mínimo entre peticiones (ms)
@@ -63,10 +64,17 @@ async function findAvailableModel() {
       availableModel = CONFIGURED_MODEL;
       return CONFIGURED_MODEL;
     } else {
-      console.warn(`⚠️ Modelo configurado "${CONFIGURED_MODEL}" no está disponible`);
-      const models = await getAvailableModels();
-      console.warn(`💡 Modelos disponibles: ${models.join(', ') || 'Ninguno'}`);
-      console.warn(`💡 Usando detección automática...`);
+      if (!configuredModelUnavailableWarned) {
+        configuredModelUnavailableWarned = true;
+        const models = await getAvailableModels();
+        console.warn(`⚠️ Modelo configurado "${CONFIGURED_MODEL}" no está disponible`);
+        if (models.length === 0) {
+          console.warn(`💡 Modelos disponibles: Ninguno. ¿Ollama está corriendo? Prueba: ollama serve && ollama pull phi3:mini`);
+        } else {
+          console.warn(`💡 Modelos disponibles: ${models.join(', ')}`);
+        }
+        console.warn(`💡 Usando detección automática...`);
+      }
     }
   }
   
@@ -74,10 +82,16 @@ async function findAvailableModel() {
   const models = await getAvailableModels();
   if (models.length === 0) return null;
   
-  // Prioridad: llama3 > llama3.2 > llama2 > cualquier otro
-  const preferred = models.find(m => m.includes('llama3')) || 
-                   models.find(m => m.includes('llama')) ||
-                   models[0];
+  // Prioridad según uso: respuestas cortas en español → modelos rápidos y conversacionales
+  const preferred =
+    models.find(m => m.includes('llama3.2')) ||
+    models.find(m => m.includes('phi3') || m === 'phi') ||
+    models.find(m => m.includes('mistral')) ||
+    models.find(m => m.includes('qwen2')) ||
+    models.find(m => m.includes('llama3')) ||
+    models.find(m => m.includes('gemma')) ||
+    models.find(m => m.includes('llama')) ||
+    models[0];
   
   availableModel = preferred;
   return preferred;
@@ -207,7 +221,7 @@ Genera una respuesta natural y breve para este mensaje.`
         console.error(`❌ Modelo "${model}" no encontrado (404)`);
         const availableModels = await getAvailableModels();
         console.error(`💡 Modelos disponibles: ${availableModels.join(', ') || 'Ninguno'}`);
-        console.error(`💡 Instala un modelo: ollama pull llama3`);
+        console.error(`💡 Recomendado: ollama pull llama3.2:3b o ollama pull phi3`);
       } else if (res.status === 500) {
         // Error 500 puede ser por falta de memoria
         console.error(`❌ Error 500 de Ollama (sin retry disponible en este punto)`);
@@ -217,7 +231,7 @@ Genera una respuesta natural y breve para este mensaje.`
             console.error(`\n💥 PROBLEMA DE MEMORIA DETECTADO`);
             console.error(`💡 El modelo "${model}" requiere más memoria RAM de la disponible`);
             console.error(`💡 Soluciones:`);
-            console.error(`   1. Usa un modelo más pequeño: ollama pull llama3.2:1b`);
+            console.error(`   1. Usa un modelo más pequeño: ollama pull llama3.2:1b o ollama pull phi3:mini`);
             console.error(`   2. Cierra otras aplicaciones para liberar RAM`);
             console.error(`   3. Configura OLLAMA_MODEL en .env con un modelo más pequeño`);
             console.error(`   4. Modelos pequeños recomendados: llama3.2:1b, phi, tinyllama\n`);
@@ -282,7 +296,7 @@ async function generateResponse(userMessage, context = {}) {
     if (!model) {
       if (!responseErrorShown) {
         console.error('❌ No se encontraron modelos disponibles en Ollama');
-        console.error('💡 Instala un modelo: ollama pull llama3');
+        console.error('💡 Recomendado para respuestas en vivo: ollama pull llama3.2:3b o ollama pull phi3');
         responseErrorShown = true;
       }
       return null;
@@ -328,7 +342,7 @@ async function processResponseQueue() {
   isProcessingQueue = true;
   
   while (responseQueue.length > 0) {
-    const { msg, topSongs, tiktokConnection } = responseQueue.shift();
+    const { msg, topSongs, tiktokConnection, allowSend = true } = responseQueue.shift();
     
     // Verificar cooldown
     const now = Date.now();
@@ -341,14 +355,18 @@ async function processResponseQueue() {
     try {
       console.log(`💭 Procesando respuesta para: "${msg.text.substring(0, 50)}..."`);
       const response = await generateResponse(msg.text, { topSongs });
-      if (response && tiktokConnection && tiktokConnection.sendMessage) {
-        console.log(`📤 Enviando respuesta: "${response}"`);
-        const sent = await tiktokConnection.sendMessage(response);
-        if (sent) {
-          console.log(`✅ Respuesta enviada exitosamente`);
-          lastResponseTime = Date.now();
+      if (response) {
+        if (allowSend && tiktokConnection && tiktokConnection.sendMessage) {
+          console.log(`📤 Enviando respuesta: "${response}"`);
+          const sent = await tiktokConnection.sendMessage(response);
+          if (sent) {
+            console.log(`✅ Respuesta enviada exitosamente`);
+            lastResponseTime = Date.now();
+          } else {
+            console.log(`❌ No se pudo enviar la respuesta`);
+          }
         } else {
-          console.log(`❌ No se pudo enviar la respuesta`);
+          console.log(`💬 Respuesta (no enviada): "${response}"`);
         }
       } else {
         console.log(`⚠️ No se generó respuesta del LLM`);
@@ -362,16 +380,17 @@ async function processResponseQueue() {
 }
 
 /**
- * Agrega un mensaje a la cola de respuestas
+ * Agrega un mensaje a la cola de respuestas.
+ * allowSend: si false, Ollama genera la respuesta pero no se envía al chat (ENABLE_AUTO_SEND=false).
  */
-function queueResponse(msg, topSongs, tiktokConnection) {
+function queueResponse(msg, topSongs, tiktokConnection, allowSend = true) {
   // Limitar el tamaño de la cola
   if (responseQueue.length >= MAX_QUEUE_SIZE) {
     console.log(`⚠️ Cola de respuestas llena, ignorando mensaje: "${msg.text.substring(0, 30)}..."`);
     return;
   }
   
-  responseQueue.push({ msg, topSongs, tiktokConnection });
+  responseQueue.push({ msg, topSongs, tiktokConnection, allowSend });
   processResponseQueue();
 }
 

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat TikTok (estructura real para selectores)</title>
+  <style>
+    body { font-family: sans-serif; padding: 12px; }
+    #chat-messages { border: 1px solid #ccc; min-height: 100px; padding: 8px; margin-top: 12px; }
+    .chat-input-box { border: 1px solid #333; padding: 8px; min-height: 24px; outline: none; }
+    .msg { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <!-- Estructura del xpath real: /html/body/div[1]/main/div[3]/div[2]/div/div[2]/div[2]/div[1]/div/div[1]/div[1]/div -->
+  <div id="tiktok-live-main-container-id">
+    <main>
+      <div></div>
+      <div></div>
+      <div>
+        <div></div>
+        <div>
+          <div>
+            <div></div>
+            <div>
+              <div></div>
+              <div>
+                <div>
+                  <div>
+                    <div>
+                      <div>
+                        <div class="chat-input-box" contenteditable="true" role="textbox" data-placeholder="Add comment"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <div id="chat-messages"></div>
+
+  <script>
+    (function () {
+      var target = document.querySelector('#tiktok-live-main-container-id .chat-input-box');
+      var messages = document.getElementById('chat-messages');
+
+      target.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        var text = (target.textContent || target.innerText || '').trim();
+        if (!text) return;
+        var div = document.createElement('div');
+        div.className = 'msg';
+        div.textContent = text;
+        messages.appendChild(div);
+        target.textContent = '';
+      });
+    })();
+  </script>
+</body>
+</html>

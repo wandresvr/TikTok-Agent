@@ -2,6 +2,7 @@
 
 // Cache para evitar mostrar el mismo error muchas veces
 let errorShown = false;
+let configuredModelUnavailableWarned = false;
 let availableModel = null;
 
 // Rate limiting: tiempo mínimo entre peticiones (ms)
@@ -63,10 +64,17 @@ async function findAvailableModel() {
       availableModel = CONFIGURED_MODEL;
       return CONFIGURED_MODEL;
     } else {
-      console.warn(`⚠️ Modelo configurado "${CONFIGURED_MODEL}" no está disponible`);
-      const models = await getAvailableModels();
-      console.warn(`💡 Modelos disponibles: ${models.join(', ') || 'Ninguno'}`);
-      console.warn(`💡 Usando detección automática...`);
+      if (!configuredModelUnavailableWarned) {
+        configuredModelUnavailableWarned = true;
+        const models = await getAvailableModels();
+        console.warn(`⚠️ Modelo configurado "${CONFIGURED_MODEL}" no está disponible`);
+        if (models.length === 0) {
+          console.warn(`💡 Modelos disponibles: Ninguno. ¿Ollama está corriendo? Prueba: ollama serve && ollama pull phi3:mini`);
+        } else {
+          console.warn(`💡 Modelos disponibles: ${models.join(', ')}`);
+        }
+        console.warn(`💡 Usando detección automática...`);
+      }
     }
   }
   
@@ -74,10 +82,16 @@ async function findAvailableModel() {
   const models = await getAvailableModels();
   if (models.length === 0) return null;
   
-  // Prioridad: llama3 > llama3.2 > llama2 > cualquier otro
-  const preferred = models.find(m => m.includes('llama3')) || 
-                   models.find(m => m.includes('llama')) ||
-                   models[0];
+  // Prioridad según uso: clasificación JSON + respuestas cortas → modelos rápidos y que sigan instrucciones
+  const preferred =
+    models.find(m => m.includes('llama3.2')) ||  // 1b/3b: rápidos, buen JSON
+    models.find(m => m.includes('phi3') || m === 'phi') ||
+    models.find(m => m.includes('mistral')) ||
+    models.find(m => m.includes('qwen2')) ||
+    models.find(m => m.includes('llama3')) ||
+    models.find(m => m.includes('gemma')) ||
+    models.find(m => m.includes('llama')) ||
+    models[0];
   
   availableModel = preferred;
   return preferred;
@@ -109,7 +123,7 @@ async function analyze(text) {
     if (!model) {
       if (!errorShown) {
         console.error('❌ No se encontraron modelos disponibles en Ollama');
-        console.error('💡 Instala un modelo: ollama pull llama3');
+        console.error('💡 Recomendado para este proyecto (rápido + JSON): ollama pull llama3.2:3b o ollama pull phi3');
         errorShown = true;
       }
       return JSON.stringify({ type: 'normal', song: null });
@@ -118,13 +132,15 @@ async function analyze(text) {
     // Rate limiting
     await waitForRateLimit();
 
+    // Timeout: OLLAMA_RESPONSE_TIMEOUT_MS (0 = sin límite). Por defecto 2 min para dar tiempo a Ollama.
+    const timeoutMs = parseInt(process.env.OLLAMA_RESPONSE_TIMEOUT_MS || '120000', 10) || 0;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000); // Timeout de 12 segundos
+    const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
 
     const res = await fetch('http://localhost:11434/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
+      signal: timeoutMs > 0 ? controller.signal : undefined,
       body: JSON.stringify({
         model: model,
         format: 'json',        // 🔥 ESTO ES LA CLAVE
@@ -134,8 +150,43 @@ async function analyze(text) {
             role: 'system',
             content: `
 Eres un moderador experto de lives musicales.
-Responde SOLO con JSON válido.
-No expliques nada.
+
+Objetivo:
+Mantener el enganche del live y ayudar al streamer.
+
+Reglas de comportamiento:
+
+El streamer canta canciones por pedido.
+
+Reglas de comportamiento:
+
+El streamer canta canciones por pedido.
+
+Mensajes muy cortos y directos.
+
+Si el público pide una canción, responde con UN dato curioso breve sobre esa canción.
+
+El dato debe ser simple, popular y fácil de entender.
+
+Si no hay pedidos, pide canciones, tap tap ❤️ o pequeños apoyos.
+
+Puedes usar emojis.
+
+Eres moderador, no streamer.
+
+Restricciones OBLIGATORIAS:
+
+Responde EXCLUSIVAMENTE en JSON válido.
+
+El campo "message" NO PUEDE superar 50 caracteres.
+
+Cuenta los caracteres antes de responder.
+
+Si no puedes cumplir el límite, responde exactamente:
+
+🎵 Pide tu canción ❤️"
+
+No expliques nada. No agregues texto fuera del JSON.
 `
           },
           {
@@ -157,7 +208,7 @@ Mensaje:
       })
     });
 
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
 
     if (!res.ok) {
       if (res.status === 500) {
@@ -185,7 +236,7 @@ Mensaje:
       } else if (res.status === 404 && !errorShown) {
         console.error(`❌ Modelo "${model}" no encontrado (404)`);
         console.error(`💡 Modelos disponibles: ${(await getAvailableModels()).join(', ') || 'Ninguno'}`);
-        console.error(`💡 Instala un modelo: ollama pull llama3`);
+        console.error(`💡 Recomendado: ollama pull llama3.2:3b o ollama pull phi3`);
         errorShown = true;
       } else if (res.status !== 404 && res.status !== 500 && !errorShown) {
         console.error(`❌ Error en respuesta de Ollama (analyze): ${res.status} ${res.statusText}`);
@@ -202,7 +253,8 @@ Mensaje:
   } catch (error) {
     if (error.name === 'AbortError') {
       if (!errorShown) {
-        console.error('⏱️ Timeout: Ollama tardó demasiado en responder (>12s)');
+        const timeoutMs = parseInt(process.env.OLLAMA_RESPONSE_TIMEOUT_MS || '120000', 10) || 0;
+        console.error(`⏱️ Timeout: Ollama tardó demasiado en responder${timeoutMs > 0 ? ` (>${timeoutMs / 1000}s)` : ''}. Puedes aumentar OLLAMA_RESPONSE_TIMEOUT_MS en .env o usar 0 para sin límite.`);
         errorShown = true;
       }
     } else if (error.code === 'ECONNREFUSED' || error.message?.includes('fetch failed')) {
