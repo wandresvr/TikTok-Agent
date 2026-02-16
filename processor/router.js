@@ -3,7 +3,7 @@ const { looksLikeRequest } = require('./rules');
 const { normalizeSong } = require('./normalizer');
 const { analyze } = require('../llm/ollamaClient');
 const { addRequest, getTop } = require('../state/liveState');
-const { generateResponse, shouldRespond, queueResponse } = require('../llm/responseGenerator');
+const { generateResponse, shouldRespond, queueResponse, saveResponseToCsvIfEnabled } = require('../llm/responseGenerator');
 
 // Referencia a la conexión de TikTok para enviar mensajes
 let tiktokConnection = null;
@@ -15,6 +15,8 @@ function setTikTokConnection(connection) {
 const showOtherComments = process.env.SHOW_OTHER_COMMENTS === 'true';
 // Envío automático de mensajes al chat (respuestas a solicitudes y a usuarios). true = enviar, false = solo escuchar/registrar.
 const enableAutoSend = process.env.ENABLE_AUTO_SEND !== 'false';
+// Enviar al chat las respuestas cuando se detecta una canción (true = enviar "Solicitud recibida: ...", false = solo registrar).
+const enableSendSongResponses = process.env.ENABLE_SEND_SONG_RESPONSES !== 'false';
 
 async function handleMessage(msg) {
   // Mostrar mensaje recibido solo si está habilitado
@@ -31,30 +33,32 @@ async function handleMessage(msg) {
       const topSongs = getTop(3).map(([song]) => song);
       console.log(`📊 Top canciones: ${topSongs.length > 0 ? topSongs.join(', ') : 'Ninguna'}`);
       
-      // Siempre generar respuesta con Ollama; enviar al chat solo si envío automático está habilitado
-      try {
-        console.log(`🤖 Generando respuesta para solicitud de canción...`);
-        const response = await generateResponse(
-          `Solicitud recibida: ${song}`,
-          { topSongs }
-        );
-        if (response) {
-          if (enableAutoSend && tiktokConnection && tiktokConnection.sendMessage) {
-            console.log(`📤 Enviando mensaje: "${response}"`);
-            const sent = await tiktokConnection.sendMessage(response);
-            if (sent) console.log(`✅ Mensaje enviado exitosamente`);
-            else console.log(`❌ No se pudo enviar el mensaje`);
+      if (enableSendSongResponses) {
+        try {
+          console.log(`🤖 Generando respuesta para solicitud de canción...`);
+          const response = await generateResponse(
+            `Solicitud recibida: ${song}`,
+            { topSongs }
+          );
+          if (response) {
+            if (enableAutoSend && tiktokConnection && tiktokConnection.sendMessage) {
+              console.log(`📤 Enviando mensaje: "${response}"`);
+              const sent = await tiktokConnection.sendMessage(response);
+              if (sent) console.log(`✅ Mensaje enviado exitosamente`);
+              else console.log(`❌ No se pudo enviar el mensaje`);
+            } else {
+              console.log(`💬 Respuesta (no enviada): "${response}"`);
+            }
+            saveResponseToCsvIfEnabled(msg.user, `Solicitud recibida: ${song}`, response, enableAutoSend && tiktokConnection && !!tiktokConnection.sendMessage);
           } else {
-            console.log(`💬 Respuesta (no enviada): "${response}"`);
+            console.log(`⚠️ No se generó respuesta del LLM`);
           }
-        } else {
-          console.log(`⚠️ No se generó respuesta del LLM`);
+        } catch (e) {
+          console.error(`❌ Error generando/enviando respuesta:`, e.message);
         }
-      } catch (e) {
-        console.error(`❌ Error generando/enviando respuesta:`, e.message);
-      }
-      if (!tiktokConnection || !tiktokConnection.sendMessage) {
-        console.log(`⚠️ No se puede enviar al chat: conexión no disponible o sin autenticación`);
+        if (!tiktokConnection || !tiktokConnection.sendMessage) {
+          console.log(`⚠️ No se puede enviar al chat: conexión no disponible o sin autenticación`);
+        }
       }
       return;
     }
@@ -78,30 +82,32 @@ async function handleMessage(msg) {
         const topSongs = getTop(3).map(([song]) => song);
         console.log(`📊 Top canciones: ${topSongs.length > 0 ? topSongs.join(', ') : 'Ninguna'}`);
         
-        // Siempre generar respuesta con Ollama; enviar al chat solo si envío automático está habilitado
-        try {
-          console.log(`🤖 Generando respuesta para solicitud de canción...`);
-          const response = await generateResponse(
-            `Solicitud recibida: ${result.song}`,
-            { topSongs }
-          );
-          if (response) {
-            if (enableAutoSend && tiktokConnection && tiktokConnection.sendMessage) {
-              console.log(`📤 Enviando mensaje: "${response}"`);
-              const sent = await tiktokConnection.sendMessage(response);
-              if (sent) console.log(`✅ Mensaje enviado exitosamente`);
-              else console.log(`❌ No se pudo enviar el mensaje`);
+        if (enableSendSongResponses) {
+          try {
+            console.log(`🤖 Generando respuesta para solicitud de canción...`);
+            const response = await generateResponse(
+              `Solicitud recibida: ${result.song}`,
+              { topSongs }
+            );
+            if (response) {
+              if (enableAutoSend && tiktokConnection && tiktokConnection.sendMessage) {
+                console.log(`📤 Enviando mensaje: "${response}"`);
+                const sent = await tiktokConnection.sendMessage(response);
+                if (sent) console.log(`✅ Mensaje enviado exitosamente`);
+                else console.log(`❌ No se pudo enviar el mensaje`);
+              } else {
+                console.log(`💬 Respuesta (no enviada): "${response}"`);
+              }
+              saveResponseToCsvIfEnabled(msg.user, `Solicitud recibida: ${result.song}`, response, enableAutoSend && tiktokConnection && !!tiktokConnection.sendMessage);
             } else {
-              console.log(`💬 Respuesta (no enviada): "${response}"`);
+              console.log(`⚠️ No se generó respuesta del LLM`);
             }
-          } else {
-            console.log(`⚠️ No se generó respuesta del LLM`);
+          } catch (e) {
+            console.error(`❌ Error generando/enviando respuesta:`, e.message);
           }
-        } catch (e) {
-          console.error(`❌ Error generando/enviando respuesta:`, e.message);
-        }
-        if (!tiktokConnection || !tiktokConnection.sendMessage) {
-          console.log(`⚠️ No se puede enviar al chat: conexión no disponible o sin autenticación`);
+          if (!tiktokConnection || !tiktokConnection.sendMessage) {
+            console.log(`⚠️ No se puede enviar al chat: conexión no disponible o sin autenticación`);
+          }
         }
       } else if (shouldRespond(msg) && tiktokConnection) {
         // Cola de respuestas: Ollama siempre genera; enviamos al chat solo si ENABLE_AUTO_SEND

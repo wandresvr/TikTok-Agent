@@ -10,6 +10,7 @@ chrome-profile/
 
 # Sesión / datos locales
 session.json
+responses.csv
 
 # Logs y temporales
 *.log

@@ -1,4 +1,6 @@
 // llm/responseGenerator.js
+const fs = require('fs');
+const path = require('path');
 
 // Cache para evitar mostrar el mismo error muchas veces
 let responseErrorShown = false;
@@ -356,9 +358,10 @@ async function processResponseQueue() {
       console.log(`💭 Procesando respuesta para: "${msg.text.substring(0, 50)}..."`);
       const response = await generateResponse(msg.text, { topSongs });
       if (response) {
+        let sent = false;
         if (allowSend && tiktokConnection && tiktokConnection.sendMessage) {
           console.log(`📤 Enviando respuesta: "${response}"`);
-          const sent = await tiktokConnection.sendMessage(response);
+          sent = await tiktokConnection.sendMessage(response);
           if (sent) {
             console.log(`✅ Respuesta enviada exitosamente`);
             lastResponseTime = Date.now();
@@ -368,6 +371,7 @@ async function processResponseQueue() {
         } else {
           console.log(`💬 Respuesta (no enviada): "${response}"`);
         }
+        saveResponseToCsvIfEnabled(msg.user, msg.text, response, sent);
       } else {
         console.log(`⚠️ No se generó respuesta del LLM`);
       }
@@ -432,4 +436,39 @@ function shouldRespond(msg) {
   return hasQuestionMark || hasGreeting || (hasDirectMention && text.length > 10) || hasMusicQuestion;
 }
 
-module.exports = { generateResponse, shouldRespond, queueResponse };
+/**
+ * Escapa un valor para CSV (comillas dobles y saltos de línea).
+ */
+function escapeCsvValue(val) {
+  if (val == null) return '';
+  const s = String(val).replace(/"/g, '""');
+  return /[",\n\r]/.test(s) ? `"${s}"` : s;
+}
+
+/**
+ * Si SAVE_RESPONSES_CSV=true, append una fila al CSV en RESPONSES_CSV_PATH.
+ * user: nombre del usuario, userMessage: mensaje que disparó la respuesta, response: texto del bot, sent: si se envió al chat.
+ */
+function saveResponseToCsvIfEnabled(user, userMessage, response, sent) {
+  if (process.env.SAVE_RESPONSES_CSV !== 'true') return;
+  const csvPath = process.env.RESPONSES_CSV_PATH?.trim();
+  if (!csvPath) return;
+  try {
+    const fullPath = path.resolve(csvPath);
+    const header = 'fecha,usuario,mensaje_usuario,respuesta_bot,enviado';
+    const needsHeader = !fs.existsSync(fullPath);
+    const row = [
+      new Date().toISOString(),
+      escapeCsvValue(user),
+      escapeCsvValue(userMessage),
+      escapeCsvValue(response),
+      sent ? 'si' : 'no'
+    ].join(',');
+    const line = (needsHeader ? header + '\n' : '') + row + '\n';
+    fs.appendFileSync(fullPath, line, 'utf8');
+  } catch (e) {
+    console.error('❌ Error guardando respuesta en CSV:', e.message);
+  }
+}
+
+module.exports = { generateResponse, shouldRespond, queueResponse, saveResponseToCsvIfEnabled };

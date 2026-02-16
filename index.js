@@ -18,7 +18,7 @@ const { SignConfig } = require('tiktok-live-connector');
 const { startListener } = require('./listener/tiktokListener');
 const { handleMessage, setTikTokConnection } = require('./processor/router');
 const { startNotifier } = require('./responder/notifier');
-const { generateResponse } = require('./llm/responseGenerator');
+const { generateResponse, saveResponseToCsvIfEnabled } = require('./llm/responseGenerator');
 
 // Verificar disponibilidad de Ollama al inicio
 async function checkOllamaOnStart() {
@@ -167,18 +167,20 @@ const periodicIntervalMs = parseInt(process.env.OLLAMA_PERIODIC_INTERVAL_MS || '
 let periodicIntervalId = null;
 if (periodicIntervalMs > 0) {
   const enableAutoSend = process.env.ENABLE_AUTO_SEND !== 'false';
+  const periodicPrompt = 'Genera un mensaje breve para el live: saludo, pide canciones o anima con tap tap. Una sola línea, máximo 60 caracteres.';
   periodicIntervalId = setInterval(async () => {
     if (!tiktokConnection) return;
     try {
-      const response = await generateResponse(
-        'Genera un mensaje breve para el live: saludo, pide canciones o anima con tap tap. Una sola línea, máximo 60 caracteres.',
-        {}
-      );
-      if (response && enableAutoSend && tiktokConnection.sendMessage) {
-        const sent = await tiktokConnection.sendMessage(response);
-        if (sent) console.log(`⏱️ [Periódico cada ${periodicIntervalMs / 60000} min] Enviado: "${response.substring(0, 50)}..."`);
-      } else if (response) {
-        console.log(`⏱️ [Periódico] Respuesta (no enviada): "${response.substring(0, 50)}..."`);
+      const response = await generateResponse(periodicPrompt, {});
+      if (response) {
+        let sent = false;
+        if (enableAutoSend && tiktokConnection.sendMessage) {
+          sent = await tiktokConnection.sendMessage(response);
+          if (sent) console.log(`⏱️ [Periódico cada ${periodicIntervalMs / 60000} min] Enviado: "${response.substring(0, 50)}..."`);
+        } else {
+          console.log(`⏱️ [Periódico] Respuesta (no enviada): "${response.substring(0, 50)}..."`);
+        }
+        saveResponseToCsvIfEnabled('(periódico)', periodicPrompt, response, sent);
       }
     } catch (e) {
       console.warn('⏱️ [Periódico] Error:', e.message);
