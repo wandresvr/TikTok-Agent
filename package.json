@@ -6,10 +6,24 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:browser-sender": "node scripts/test-browser-sender.js"
   },
-  "keywords": [],
+  "keywords": [
+    "tiktok",
+    "tiktok-live",
+    "live-chat",
+    "bot",
+    "ollama",
+    "llm",
+    "nodejs",
+    "chatbot",
+    "streaming",
+    "music-requests",
+    "automation",
+    "playwright",
+    "euler-stream"
+  ],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Agente para TikTok Live: escucha el chat, detecta pedidos de canciones y responde con Ollama.",
   "dependencies": {
     "dotenv": "^17.2.4",
     "node-fetch": "^3.3.2",
