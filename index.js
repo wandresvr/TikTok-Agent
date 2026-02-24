@@ -165,11 +165,29 @@ const notifier = startNotifier();
 // Respuesta periódica de Ollama cada N minutos (mantiene actividad en el live)
 const periodicIntervalMs = parseInt(process.env.OLLAMA_PERIODIC_INTERVAL_MS || '120000', 10) || 0;
 let periodicIntervalId = null;
+// Rotamos el tipo de mensaje cada vez para que no siempre diga lo mismo
+const PERIODIC_PROMPT_HINTS = [
+  'Esta vez la frase debe INVITAR A PEDIR CANCIONES (que manden su tema).',
+  'Esta vez la frase debe ANIMAR A DAR TAP TAP en la pantalla.',
+  'Esta vez la frase debe PEDIR SEGUIR AL HOST o dar like.',
+  'Esta vez la frase debe ser un SALUDO BREVE y alegre al chat.'
+];
+const PERIODIC_TWISTS = [
+  'Redacta de una forma distinta a la última vez.',
+  'Usa otras palabras y emojis, sin repetir frases típicas.',
+  'Inventa una variación nueva, no la frase obvia.',
+  'Tono más festivo y breve.',
+  'Otra forma de decirlo, creativa.'
+];
+let periodicRunCount = 0;
 if (periodicIntervalMs > 0) {
   const enableAutoSend = process.env.ENABLE_AUTO_SEND !== 'false';
-  const periodicPrompt = 'Genera un mensaje breve para el live: saludo, pide canciones o anima con tap tap. Una sola línea, máximo 60 caracteres.';
   periodicIntervalId = setInterval(async () => {
     if (!tiktokConnection) return;
+    const hint = PERIODIC_PROMPT_HINTS[periodicRunCount % PERIODIC_PROMPT_HINTS.length];
+    const twist = PERIODIC_TWISTS[Math.floor(Math.random() * PERIODIC_TWISTS.length)];
+    periodicRunCount += 1;
+    const periodicPrompt = `Genera una frase corta y alegre para el live. ${hint} ${twist} Escribe solo la frase como si la dijeras en el chat, con emojis, máximo 70 caracteres.`;
     try {
       const response = await generateResponse(periodicPrompt, {});
       if (response) {

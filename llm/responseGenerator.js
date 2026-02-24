@@ -4,6 +4,7 @@ const path = require('path');
 
 // Cache para evitar mostrar el mismo error muchas veces
 let responseErrorShown = false;
+let analyzeErrorShown = false;
 let configuredModelUnavailableWarned = false;
 let availableModel = null;
 
@@ -140,6 +141,106 @@ async function waitForRateLimit() {
 }
 
 /**
+ * Clasifica un mensaje con el LLM (tipo + canción si aplica).
+ * Devuelve JSON string: { type: "request"|"vote"|"rating"|"normal"|"spam", song: null|"artista - canción" }
+ */
+async function analyze(text) {
+  try {
+    const model = await findAvailableModel();
+    if (!model) {
+      if (!analyzeErrorShown) {
+        console.error('❌ No se encontraron modelos disponibles en Ollama');
+        console.error('💡 Recomendado para este proyecto (rápido + JSON): ollama pull llama3.2:3b o ollama pull phi3');
+        analyzeErrorShown = true;
+      }
+      return JSON.stringify({ type: 'normal', song: null });
+    }
+
+    await waitForRateLimit();
+
+    const timeoutMs = parseInt(process.env.OLLAMA_RESPONSE_TIMEOUT_MS || '120000', 10) || 0;
+    const controller = new AbortController();
+    const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
+
+    const res = await fetch('http://localhost:11434/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: timeoutMs > 0 ? controller.signal : undefined,
+      body: JSON.stringify({
+        model: model,
+        format: 'json',
+        stream: false,
+        messages: [
+          {
+            role: 'system',
+            content: `
+Eres un moderador experto de lives musicales. Clasifica mensajes de chat.
+
+Devuelve EXCLUSIVAMENTE JSON válido con este formato:
+{ "type": "request|vote|rating|normal|spam", "song": null | "artista - canción" }
+
+Si el mensaje pide una canción, type debe ser "request" y song debe ser "artista - canción". Si no, type es uno de los otros y song es null.`
+          },
+          {
+            role: 'user',
+            content: `Clasifica este mensaje. Devuelve solo el JSON (sin explicaciones).
+
+Mensaje: "${text}"`
+          }
+        ]
+      })
+    });
+
+    if (timeoutId) clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      if (res.status === 500) {
+        consecutive500Errors++;
+        let errorBody = '';
+        try { errorBody = await res.text(); } catch (e) {}
+        if (!analyzeErrorShown) {
+          console.warn(`⚠️ Error 500 de Ollama (analyze)`);
+          if (errorBody && (errorBody.includes('unable to allocate') || errorBody.includes('buffer') || errorBody.includes('memory'))) {
+            console.error(`💡 El modelo "${model}" puede requerir más RAM. Prueba: ollama pull llama3.2:1b`);
+          }
+          analyzeErrorShown = true;
+        }
+      } else if (res.status === 404 && !analyzeErrorShown) {
+        console.error(`❌ Modelo "${model}" no encontrado (404)`);
+        console.error(`💡 Recomendado: ollama pull llama3.2:3b o ollama pull phi3`);
+        analyzeErrorShown = true;
+      } else if (res.status !== 404 && res.status !== 500 && !analyzeErrorShown) {
+        console.error(`❌ Error en respuesta de Ollama (analyze): ${res.status} ${res.statusText}`);
+        analyzeErrorShown = true;
+      }
+      return JSON.stringify({ type: 'normal', song: null });
+    }
+
+    consecutive500Errors = 0;
+    analyzeErrorShown = false;
+    const data = await res.json();
+    return data.message?.content || JSON.stringify({ type: 'normal', song: null });
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      if (!analyzeErrorShown) {
+        const timeoutMs = parseInt(process.env.OLLAMA_RESPONSE_TIMEOUT_MS || '120000', 10) || 0;
+        console.error(`⏱️ Timeout: Ollama tardó demasiado en responder (analyze). OLLAMA_RESPONSE_TIMEOUT_MS=${timeoutMs || 'sin límite'}`);
+        analyzeErrorShown = true;
+      }
+    } else if (error.code === 'ECONNREFUSED' || error.message?.includes('fetch failed')) {
+      if (!analyzeErrorShown) {
+        console.error('❌ No se puede conectar a Ollama en http://localhost:11434. Verifica: ollama serve');
+        analyzeErrorShown = true;
+      }
+    } else if (!analyzeErrorShown) {
+      console.error(`❌ Error analizando mensaje: ${error.message || error}`);
+      analyzeErrorShown = true;
+    }
+    return JSON.stringify({ type: 'normal', song: null });
+  }
+}
+
+/**
  * Intenta hacer una petición con retry para errores 500
  */
 async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2) {
@@ -155,6 +256,7 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
       const controller = new AbortController();
       const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
 
+      const temperature = parseFloat(process.env.OLLAMA_RESPONSE_TEMPERATURE || '0.85', 10) || 0.85;
       const res = await fetch('http://localhost:11434/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,23 +264,31 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
         body: JSON.stringify({
           model: model,
           stream: false,
+          options: { temperature },
           messages: [
             {
               role: 'system',
-              content: `Eres un asistente amigable y divertido en un live de TikTok musical.
-Responde de forma breve, natural y en español.
-Mantén las respuestas cortas (máximo 2-3 líneas).
-Sé amigable, usa emojis ocasionalmente, pero no abuses de ellos.
-Si alguien pregunta por canciones, menciona las más pedidas si las hay.
-Si el mensaje es un saludo, responde amigablemente.
-Si es una pregunta, responde de forma útil pero concisa.`
+              content: `Eres el moderador de un live musical: animado, alegre y cercano. Tu tono es energético y cálido, nunca frío ni cortante. Hablas en tercera persona o "nosotros" (somos el equipo del live).
+
+REGLA DE ORO: Escribe SIEMPRE la frase tal como se diría en el chat. NUNCA repitas instrucciones literales (ej: no digas "pedir que pidan canciones"). Inventa la frase natural y con onda.
+
+VARÍA SIEMPRE: cada respuesta debe sonar DISTINTA. No repitas las mismas frases (evita siempre "mandá tu tema y dale tap tap", "seguinos y dale like", "¡Hola! ¿Qué te apetece?"). Usa otras palabras, otros emojis, otro orden, sinónimos. Sé creativo.
+
+Según el mensaje:
+1) "Solicitud recibida: [artista - canción]": Un dato curioso breve sobre esa canción. Varía (año, récord, anécdota, país).
+2) Saludo del público: Saludo alegre y breve, cada vez redactado distinto.
+3) Pregunta: Respuesta útil y concisa.
+4) Mensaje para el live: La idea te la dan en el mensaje; redacta esa idea de una forma NUEVA, no uses frases hechas.
+
+Formato: responde ÚNICAMENTE un JSON: {"message": "tu frase aquí"}
+Máximo 80 caracteres en "message". Usa emojis. Sé animado y variado.`
             },
             {
               role: 'user',
               content: `Mensaje del usuario: "${userMessage}"
 ${context.topSongs ? `Canciones más pedidas: ${context.topSongs.join(', ')}` : ''}
 
-Genera una respuesta natural y breve para este mensaje.`
+Escribe la respuesta (solo el JSON con "message"). Frase natural para el chat, animada y alegre.`
             }
           ]
         })
@@ -189,18 +299,26 @@ Genera una respuesta natural y breve para este mensaje.`
       console.log(`📥 [makeRequestWithRetry] Respuesta recibida: ${res.status} ${res.statusText}`);
 
       if (res.ok) {
-        // Resetear contador de errores 500 si la petición fue exitosa
         consecutive500Errors = 0;
         responseErrorShown = false;
         const data = await res.json();
-        console.log(`✅ [makeRequestWithRetry] Datos recibidos:`, JSON.stringify(data).substring(0, 300));
-        const content = data.message?.content?.trim();
-        if (!content) {
-          console.warn(`⚠️ [makeRequestWithRetry] Respuesta OK pero sin contenido. Data:`, JSON.stringify(data).substring(0, 200));
-        } else {
-          console.log(`✅ [makeRequestWithRetry] Contenido extraído: "${content.substring(0, 100)}..."`);
+        const raw = data.message?.content?.trim();
+        if (!raw) {
+          console.warn(`⚠️ [makeRequestWithRetry] Respuesta OK pero sin contenido.`);
+          return null;
         }
-        return content || null;
+        // Si el modelo devolvió JSON con campo "message", usar solo ese texto para el chat
+        let content = raw;
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.message === 'string' && parsed.message.trim()) {
+            content = parsed.message.trim();
+          }
+        } catch (_) {
+          // No era JSON, usar raw como texto
+        }
+        console.log(`✅ [makeRequestWithRetry] Respuesta: "${content.substring(0, 80)}${content.length > 80 ? '...' : ''}"`);
+        return content;
       }
 
       // Manejar errores 500 con retry
@@ -437,12 +555,12 @@ function shouldRespond(msg) {
 }
 
 /**
- * Escapa un valor para CSV (comillas dobles y saltos de línea).
+ * Escapa un valor para CSV (separador ;, comillas y saltos de línea).
  */
 function escapeCsvValue(val) {
   if (val == null) return '';
   const s = String(val).replace(/"/g, '""');
-  return /[",\n\r]/.test(s) ? `"${s}"` : s;
+  return /[";\n\r]/.test(s) ? `"${s}"` : s;
 }
 
 /**
@@ -455,15 +573,15 @@ function saveResponseToCsvIfEnabled(user, userMessage, response, sent) {
   if (!csvPath) return;
   try {
     const fullPath = path.resolve(csvPath);
-    const header = 'fecha,usuario,mensaje_usuario,respuesta_bot,enviado';
+    const header = 'fecha;usuario;mensaje_usuario;respuesta_bot;enviado';
     const needsHeader = !fs.existsSync(fullPath);
     const row = [
       new Date().toISOString(),
       escapeCsvValue(user),
       escapeCsvValue(userMessage),
       escapeCsvValue(response),
-      sent ? 'si' : 'no'
-    ].join(',');
+      ''  // enviado: siempre vacío
+    ].join(';');
     const line = (needsHeader ? header + '\n' : '') + row + '\n';
     fs.appendFileSync(fullPath, line, 'utf8');
   } catch (e) {
@@ -471,4 +589,4 @@ function saveResponseToCsvIfEnabled(user, userMessage, response, sent) {
   }
 }
 
-module.exports = { generateResponse, shouldRespond, queueResponse, saveResponseToCsvIfEnabled };
+module.exports = { analyze, generateResponse, shouldRespond, queueResponse, saveResponseToCsvIfEnabled };

@@ -1,9 +1,8 @@
 // processor/router.js
 const { looksLikeRequest } = require('./rules');
 const { normalizeSong } = require('./normalizer');
-const { analyze } = require('../llm/ollamaClient');
 const { addRequest, getTop } = require('../state/liveState');
-const { generateResponse, shouldRespond, queueResponse, saveResponseToCsvIfEnabled } = require('../llm/responseGenerator');
+const { analyze, generateResponse, shouldRespond, queueResponse, saveResponseToCsvIfEnabled } = require('../llm/responseGenerator');
 
 // Referencia a la conexión de TikTok para enviar mensajes
 let tiktokConnection = null;
