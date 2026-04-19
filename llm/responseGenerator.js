@@ -257,6 +257,10 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
       const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
 
       const temperature = parseFloat(process.env.OLLAMA_RESPONSE_TEMPERATURE || '0.85', 10) || 0.85;
+      const moderatorName = process.env.MODERATOR_NAME?.trim();
+      const moderatorLine = moderatorName
+        ? `Tu nombre como moderador es "${moderatorName}". Cuando te etiqueten (@${moderatorName.replace(/\s/g, '')}) o te nombren, responde SIEMPRE según el contexto del mensaje (saludo, pregunta, petición, etc.).\n\n`
+        : '';
       const res = await fetch('http://localhost:11434/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -269,14 +273,13 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
             {
               role: 'system',
               content: `Eres el moderador de un live musical: animado, alegre y cercano. Tu tono es energético y cálido, nunca frío ni cortante. Hablas en tercera persona o "nosotros" (somos el equipo del live).
-
-REGLA DE ORO: Escribe SIEMPRE la frase tal como se diría en el chat. NUNCA repitas instrucciones literales (ej: no digas "pedir que pidan canciones"). Inventa la frase natural y con onda.
+${moderatorLine}REGLA DE ORO: Escribe SIEMPRE la frase tal como se diría en el chat. NUNCA repitas instrucciones literales (ej: no digas "pedir que pidan canciones"). Inventa la frase natural y con onda.
 
 VARÍA SIEMPRE: cada respuesta debe sonar DISTINTA. No repitas las mismas frases (evita siempre "mandá tu tema y dale tap tap", "seguinos y dale like", "¡Hola! ¿Qué te apetece?"). Usa otras palabras, otros emojis, otro orden, sinónimos. Sé creativo.
 
 Según el mensaje:
-1) "Solicitud recibida: [artista - canción]": Un dato curioso breve sobre esa canción. Varía (año, récord, anécdota, país).
-2) Saludo del público: Saludo alegre y breve, cada vez redactado distinto.
+1) "Solicitud recibida: artista - canción": Un dato curioso breve sobre esa canción. Varía (año, récord, anécdota, país).
+2) Saludo del público o cuando te nombran: Saludo/respuesta alegre y breve, según el contexto.
 3) Pregunta: Respuesta útil y concisa.
 4) Mensaje para el live: La idea te la dan en el mensaje; redacta esa idea de una forma NUEVA, no uses frases hechas.
 
@@ -302,9 +305,10 @@ Escribe la respuesta (solo el JSON con "message"). Frase natural para el chat, a
         consecutive500Errors = 0;
         responseErrorShown = false;
         const data = await res.json();
-        const raw = data.message?.content?.trim();
+        const raw = (data.message && (data.message.content != null)) ? String(data.message.content).trim() : '';
         if (!raw) {
-          console.warn(`⚠️ [makeRequestWithRetry] Respuesta OK pero sin contenido.`);
+          const preview = JSON.stringify(data).substring(0, 400);
+          console.warn(`⚠️ [makeRequestWithRetry] Respuesta OK pero sin contenido. Respuesta de Ollama: ${preview}${JSON.stringify(data).length > 400 ? '...' : ''}`);
           return null;
         }
         // Si el modelo devolvió JSON con campo "message", usar solo ese texto para el chat
@@ -476,10 +480,11 @@ async function processResponseQueue() {
       console.log(`💭 Procesando respuesta para: "${msg.text.substring(0, 50)}..."`);
       const response = await generateResponse(msg.text, { topSongs });
       if (response) {
+        const textToSend = formatResponseWithMention(response, msg.user, msg.displayName);
         let sent = false;
         if (allowSend && tiktokConnection && tiktokConnection.sendMessage) {
-          console.log(`📤 Enviando respuesta: "${response}"`);
-          sent = await tiktokConnection.sendMessage(response);
+          console.log(`📤 Enviando respuesta: "${textToSend.substring(0, 60)}..."`);
+          sent = await tiktokConnection.sendMessage(textToSend);
           if (sent) {
             console.log(`✅ Respuesta enviada exitosamente`);
             lastResponseTime = Date.now();
@@ -489,7 +494,7 @@ async function processResponseQueue() {
         } else {
           console.log(`💬 Respuesta (no enviada): "${response}"`);
         }
-        saveResponseToCsvIfEnabled(msg.user, msg.text, response, sent);
+        saveResponseToCsvIfEnabled(msg.user, msg.text, textToSend, sent);
       } else {
         console.log(`⚠️ No se generó respuesta del LLM`);
       }
@@ -517,12 +522,44 @@ function queueResponse(msg, topSongs, tiktokConnection, allowSend = true) {
 }
 
 /**
+ * True si el mensaje es del propio moderador (cuenta definida en MODERATOR_NAME).
+ * Esos mensajes no se deben procesar ni responder.
+ */
+function isMessageFromModerator(msg) {
+  const name = process.env.MODERATOR_NAME?.trim();
+  if (!name) return false;
+  const n = name.toLowerCase();
+  const user = (msg.user && String(msg.user).trim().toLowerCase()) || '';
+  const display = (msg.displayName && String(msg.displayName).trim().toLowerCase()) || '';
+  return user === n || display === n;
+}
+
+/**
+ * True si el mensaje menciona o etiqueta al moderador (MODERATOR_NAME en .env).
+ * Cuando te etiquetan, se responde siempre.
+ */
+function messageMentionsModerator(text) {
+  const name = process.env.MODERATOR_NAME?.trim();
+  if (!name) return false;
+  const lower = text.toLowerCase().trim();
+  const nameLower = name.toLowerCase();
+  if (lower.includes(nameLower)) return true;
+  const atName = '@' + nameLower.replace(/\s/g, '');
+  return lower.includes(atName);
+}
+
+/**
  * Determina si un mensaje merece una respuesta
- * Ahora más selectivo para evitar responder a todo
+ * Si te etiquetan o nombran (MODERATOR_NAME), siempre se responde.
  */
 function shouldRespond(msg) {
   const text = msg.text.toLowerCase().trim();
-  
+
+  // Si mencionan al moderador: responder siempre (máx 150 caracteres)
+  if (messageMentionsModerator(msg.text) && text.length <= 150) {
+    return true;
+  }
+
   // No responder a mensajes muy cortos o muy largos
   if (text.length < 5 || text.length > 150) {
     return false;
@@ -535,22 +572,21 @@ function shouldRespond(msg) {
 
   // Responder solo a preguntas directas (con ?)
   const hasQuestionMark = text.includes('?');
-  
+
   // Responder a saludos específicos (más restrictivo)
   const specificGreetings = ['hola', 'hi', 'hello', 'buenas noches', 'buenos días', 'buenas tardes'];
   const hasGreeting = specificGreetings.some(greeting => {
     const regex = new RegExp(`^${greeting}[\\s!.,]*$`, 'i');
     return regex.test(text);
   });
-  
+
   // Responder a menciones directas al streamer/DJ
   const hasDirectMention = /@\w+|streamer|dj|minh|@minh/i.test(text);
-  
+
   // Responder a preguntas específicas sobre canciones/música
   const musicQuestions = ['qué canción', 'qué música', 'qué tema', 'pon', 'ponme', 'play'];
   const hasMusicQuestion = musicQuestions.some(q => text.includes(q));
-  
-  // Solo responder si cumple criterios específicos
+
   return hasQuestionMark || hasGreeting || (hasDirectMention && text.length > 10) || hasMusicQuestion;
 }
 
@@ -561,6 +597,22 @@ function escapeCsvValue(val) {
   if (val == null) return '';
   const s = String(val).replace(/"/g, '""');
   return /[";\n\r]/.test(s) ? `"${s}"` : s;
+}
+
+/**
+ * Si ENABLE_MENTION_RESPONSE no es 'false' y hay destinatario, devuelve "@destinatario respuesta".
+ * Si hay displayName se usa para la mención (@DisplayName); si no, se usa username (handle).
+ */
+function formatResponseWithMention(response, username, displayName) {
+  if (!response) return response;
+  if (process.env.ENABLE_MENTION_RESPONSE === 'false') return response;
+  const mention = (displayName && typeof displayName === 'string' && displayName.trim())
+    ? displayName.trim()
+    : (username && typeof username === 'string' && username.trim())
+      ? username.trim()
+      : '';
+  if (!mention) return response;
+  return `@${mention} ${response}`;
 }
 
 /**
@@ -589,4 +641,4 @@ function saveResponseToCsvIfEnabled(user, userMessage, response, sent) {
   }
 }
 
-module.exports = { analyze, generateResponse, shouldRespond, queueResponse, saveResponseToCsvIfEnabled };
+module.exports = { analyze, generateResponse, shouldRespond, queueResponse, saveResponseToCsvIfEnabled, formatResponseWithMention, messageMentionsModerator, isMessageFromModerator };

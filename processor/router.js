@@ -2,7 +2,7 @@
 const { looksLikeRequest } = require('./rules');
 const { normalizeSong } = require('./normalizer');
 const { addRequest, getTop } = require('../state/liveState');
-const { analyze, generateResponse, shouldRespond, queueResponse, saveResponseToCsvIfEnabled } = require('../llm/responseGenerator');
+const { analyze, generateResponse, shouldRespond, queueResponse, saveResponseToCsvIfEnabled, formatResponseWithMention, messageMentionsModerator, isMessageFromModerator } = require('../llm/responseGenerator');
 
 // Referencia a la conexión de TikTok para enviar mensajes
 let tiktokConnection = null;
@@ -18,6 +18,11 @@ const enableAutoSend = process.env.ENABLE_AUTO_SEND !== 'false';
 const enableSendSongResponses = process.env.ENABLE_SEND_SONG_RESPONSES !== 'false';
 
 async function handleMessage(msg) {
+  // No procesar mensajes del propio moderador (cuenta definida en MODERATOR_NAME)
+  if (isMessageFromModerator(msg)) {
+    return;
+  }
+
   // Mostrar mensaje recibido solo si está habilitado
   if (showOtherComments) {
     console.log(`\n💬 [${msg.user}] ${msg.text}`);
@@ -40,15 +45,16 @@ async function handleMessage(msg) {
             { topSongs }
           );
           if (response) {
+            const textToSend = formatResponseWithMention(response, msg.user, msg.displayName);
             if (enableAutoSend && tiktokConnection && tiktokConnection.sendMessage) {
-              console.log(`📤 Enviando mensaje: "${response}"`);
-              const sent = await tiktokConnection.sendMessage(response);
+              console.log(`📤 Enviando mensaje: "${textToSend.substring(0, 60)}..."`);
+              const sent = await tiktokConnection.sendMessage(textToSend);
               if (sent) console.log(`✅ Mensaje enviado exitosamente`);
               else console.log(`❌ No se pudo enviar el mensaje`);
             } else {
               console.log(`💬 Respuesta (no enviada): "${response}"`);
             }
-            saveResponseToCsvIfEnabled(msg.user, `Solicitud recibida: ${song}`, response, enableAutoSend && tiktokConnection && !!tiktokConnection.sendMessage);
+            saveResponseToCsvIfEnabled(msg.user, `Solicitud recibida: ${song}`, textToSend, enableAutoSend && tiktokConnection && !!tiktokConnection.sendMessage);
           } else {
             console.log(`⚠️ No se generó respuesta del LLM`);
           }
@@ -89,15 +95,16 @@ async function handleMessage(msg) {
               { topSongs }
             );
             if (response) {
+              const textToSend = formatResponseWithMention(response, msg.user);
               if (enableAutoSend && tiktokConnection && tiktokConnection.sendMessage) {
-                console.log(`📤 Enviando mensaje: "${response}"`);
-                const sent = await tiktokConnection.sendMessage(response);
+                console.log(`📤 Enviando mensaje: "${textToSend.substring(0, 60)}..."`);
+                const sent = await tiktokConnection.sendMessage(textToSend);
                 if (sent) console.log(`✅ Mensaje enviado exitosamente`);
                 else console.log(`❌ No se pudo enviar el mensaje`);
               } else {
                 console.log(`💬 Respuesta (no enviada): "${response}"`);
               }
-              saveResponseToCsvIfEnabled(msg.user, `Solicitud recibida: ${result.song}`, response, enableAutoSend && tiktokConnection && !!tiktokConnection.sendMessage);
+              saveResponseToCsvIfEnabled(msg.user, `Solicitud recibida: ${result.song}`, textToSend, enableAutoSend && tiktokConnection && !!tiktokConnection.sendMessage);
             } else {
               console.log(`⚠️ No se generó respuesta del LLM`);
             }
@@ -122,6 +129,13 @@ async function handleMessage(msg) {
     } catch (e) {
       // nunca romper el flujo
     }
+  }
+
+  // Mensajes cortos (≤10 chars): si te etiquetan o nombran (MODERATOR_NAME), responder siempre
+  if (msg.text.length <= 10 && messageMentionsModerator(msg.text) && tiktokConnection) {
+    const topSongs = getTop(3).map(([song]) => song);
+    console.log(`💭 Te etiquetaron/nombraron (mensaje corto), agregado a cola: "${msg.text.substring(0, 40)}..."`);
+    queueResponse(msg, topSongs, tiktokConnection, enableAutoSend);
   }
 }
 

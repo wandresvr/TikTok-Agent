@@ -170,7 +170,8 @@ const PERIODIC_PROMPT_HINTS = [
   'Esta vez la frase debe INVITAR A PEDIR CANCIONES (que manden su tema).',
   'Esta vez la frase debe ANIMAR A DAR TAP TAP en la pantalla.',
   'Esta vez la frase debe PEDIR SEGUIR AL HOST o dar like.',
-  'Esta vez la frase debe ser un SALUDO BREVE y alegre al chat.'
+  'Esta vez la frase debe ser un SALUDO BREVE y alegre al chat.',
+  'Esta vez INVITA a pedir canciones indicando que las escriban en formato artista - canción. Mantén el tono animado y entusiasta.'
 ];
 const PERIODIC_TWISTS = [
   'Redacta de una forma distinta a la última vez.',

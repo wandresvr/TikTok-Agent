@@ -57,6 +57,10 @@ function startListener(username, onMessage, options = {}) {
           console.log(`ℹ️ Información del room no disponible`);
         }
         
+        console.log('📩 Los mensajes del chat se procesan en tiempo real durante todo el live.');
+        if (logChatActivity) {
+          console.log('📩 LOG_CHAT_ACTIVITY=true: se mostrará un resumen cada 10 mensajes.');
+        }
         console.log('='.repeat(60) + '\n');
         
         // Limpiar timer de reconexión si existe
@@ -97,13 +101,22 @@ function startListener(username, onMessage, options = {}) {
   // Iniciar conexión
   connect();
 
-  // Escuchar eventos de chat
+  // Contador para verificar que los mensajes siguen llegando durante el live (no solo al inicio)
+  let chatMessageCount = 0;
+  const LOG_CHAT_EVERY_N = 10; // Log cada N mensajes para no saturar consola
+  const logChatActivity = process.env.LOG_CHAT_ACTIVITY === 'true' || process.env.LOG_CHAT_ACTIVITY === '1';
+
+  // Escuchar eventos de chat (este listener está activo durante todo el live)
   tiktok.on(WebcastEvent.CHAT, data => {
-    onMessage({
-      userId: data.user?.userId || data.userId,
-      user: data.user?.uniqueId || data.uniqueId,
-      text: data.comment
-    });
+    chatMessageCount += 1;
+    if (logChatActivity && chatMessageCount % LOG_CHAT_EVERY_N === 0) {
+      console.log(`📩 Chat activo: ${chatMessageCount} mensajes recibidos del live`);
+    }
+    const text = data.comment != null ? String(data.comment) : '';
+    const user = data.uniqueId ?? data.user?.uniqueId ?? '';
+    const userId = (data.userId ?? data.user?.userId ?? '').toString();
+    const displayName = (data.nickname ?? data.user?.nickname ?? '').trim() || user;
+    onMessage({ userId, user, text, displayName });
   });
 
   // 🔑 MANEJO DE ERRORES
