@@ -2,6 +2,7 @@
 // Clasifica mensajes de chat con el LLM (request / vote / normal / spam).
 const config = require('../config');
 const { findAvailableModel, waitForRateLimit, reportError500, resetErrors } = require('./ollamaClient');
+const { buildClassifierSystemPrompt, resolve } = require('../config/promptLoader');
 
 let _errorShown = false;
 
@@ -38,16 +39,11 @@ async function analyze(text) {
         messages: [
           {
             role: 'system',
-            content: `Eres un moderador experto de lives musicales. Clasifica mensajes de chat.
-
-Devuelve EXCLUSIVAMENTE JSON válido con este formato:
-{ "type": "request|vote|rating|normal|spam", "song": null | "artista - canción" }
-
-Si el mensaje pide una canción, type debe ser "request" y song debe ser "artista - canción". Si no, type es uno de los otros y song es null.`,
+            content: buildClassifierSystemPrompt(),
           },
           {
             role: 'user',
-            content: `Clasifica este mensaje. Devuelve solo el JSON (sin explicaciones).\n\nMensaje: "${text}"`,
+            content: resolve('clasificador.usuario', { texto: text }),
           },
         ],
       }),

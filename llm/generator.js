@@ -2,20 +2,9 @@
 // Genera respuestas de chat usando el LLM de Ollama.
 const config = require('../config');
 const { checkAvailable, findAvailableModel, waitForRateLimit, getAvailableModels, reportError500, resetErrors } = require('./ollamaClient');
+const { buildGeneratorSystemPrompt, buildRagContext, resolve } = require('../config/promptLoader');
 
 let _errorShown = false;
-
-/**
- * Construye el bloque de contexto RAG para incluir en el prompt del usuario.
- * @param {{ found: boolean, canonical: string, score: number }} ragResult
- * @returns {string}
- */
-function buildRagContext(ragResult) {
-  if (ragResult.found) {
-    return `[REPERTORIO] La canción "${ragResult.canonical}" SÍ está en el repertorio del artista. Confírmalo con entusiasmo y comparte un dato curioso breve sobre ella.`;
-  }
-  return `[REPERTORIO] La canción pedida NO está en el repertorio conocido del artista. Discúlpate amablemente, menciona que no la tienes, y anima al usuario a pedir otra canción.`;
-}
 
 /**
  * Hace la petición HTTP a Ollama con retry en errores 500.
@@ -40,9 +29,11 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
 
       const temperature = config.ollama.temperature;
       const moderatorName = config.bot.moderatorName;
-      const moderatorLine = moderatorName
-        ? `Tu nombre como moderador es "${moderatorName}". Cuando te etiqueten (@${moderatorName.replace(/\s/g, '')}) o te nombren, responde SIEMPRE según el contexto del mensaje (saludo, pregunta, petición, etc.).\n\n`
+
+      const canciones = context.topSongs?.length
+        ? resolve('generador.usuario_canciones_pedidas', { lista: context.topSongs.join(', ') })
         : '';
+      const repertorio = context.ragResult ? buildRagContext(context.ragResult) : '';
 
       const res = await fetch(`${config.ollama.baseUrl}/api/chat`, {
         method: 'POST',
@@ -55,27 +46,15 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
           messages: [
             {
               role: 'system',
-              content: `Eres el moderador de un live musical: animado, alegre y cercano. Tu tono es energético y cálido, nunca frío ni cortante. Hablas en tercera persona o "nosotros" (somos el equipo del live).
-${moderatorLine}REGLA DE ORO: Escribe SIEMPRE la frase tal como se diría en el chat. NUNCA repitas instrucciones literales (ej: no digas "pedir que pidan canciones"). Inventa la frase natural y con onda.
-
-VARÍA SIEMPRE: cada respuesta debe sonar DISTINTA. No repitas las mismas frases (evita siempre "mandá tu tema y dale tap tap", "seguinos y dale like", "¡Hola! ¿Qué te apetece?"). Usa otras palabras, otros emojis, otro orden, sinónimos. Sé creativo.
-
-Según el mensaje:
-1) "Solicitud recibida: artista - canción": Un dato curioso breve sobre esa canción. Varía (año, récord, anécdota, país).
-2) Saludo del público o cuando te nombran: Saludo/respuesta alegre y breve, según el contexto.
-3) Pregunta: Respuesta útil y concisa.
-4) Mensaje para el live: La idea te la dan en el mensaje; redacta esa idea de una forma NUEVA, no uses frases hechas.
-
-Formato: responde ÚNICAMENTE un JSON: {"message": "tu frase aquí"}
-Máximo 80 caracteres en "message". Usa emojis. Sé animado y variado.`,
+              content: buildGeneratorSystemPrompt(moderatorName),
             },
             {
               role: 'user',
-              content: `Mensaje del usuario: "${userMessage}"
-${context.topSongs?.length ? `Canciones más pedidas: ${context.topSongs.join(', ')}` : ''}
-${context.ragResult ? buildRagContext(context.ragResult) : ''}
-
-Escribe la respuesta (solo el JSON con "message"). Frase natural para el chat, animada y alegre.`,
+              content: resolve('generador.usuario_plantilla', {
+                mensaje: userMessage,
+                canciones_pedidas: canciones,
+                contexto_repertorio: repertorio,
+              }),
             },
           ],
         }),
