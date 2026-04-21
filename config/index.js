@@ -32,4 +32,8 @@ module.exports = {
     saveResponsesCsv: process.env.SAVE_RESPONSES_CSV === 'true',
     responsesCsvPath: process.env.RESPONSES_CSV_PATH?.trim() || './responses.csv',
   },
+  rag: {
+    enabled: process.env.ENABLE_RAG !== 'false',
+    threshold: parseFloat(process.env.RAG_THRESHOLD || '0.75'),
+  },
 };

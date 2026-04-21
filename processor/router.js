@@ -8,6 +8,7 @@ const { generateResponse } = require('../llm/generator');
 const { queueResponse } = require('../llm/responseQueue');
 const { shouldRespond, messageMentionsModerator, isMessageFromModerator } = require('./messageFilter');
 const { formatResponseWithMention, saveResponseToCsvIfEnabled } = require('../utils/format');
+const { matchSong } = require('../rag');
 
 const { showOtherComments, enableAutoSend, enableSendSongResponses } = config.bot;
 
@@ -23,16 +24,28 @@ function setTikTokConnection(connection) {
  * Usado tanto por la rama de reglas rápidas como por la rama LLM.
  */
 async function handleSongRequest(song, msg) {
-  addRequest(song, msg.userId);
+  // RAG: validar contra catálogo de canciones conocidas
+  let ragResult = { found: false, canonical: song, score: 0, song: null };
+  if (config.rag.enabled) {
+    ragResult = matchSong(song);
+    if (ragResult.found) {
+      console.log(`🔍 RAG: "${song}" → "${ragResult.canonical}" (score: ${ragResult.score.toFixed(2)})`);
+    } else {
+      console.log(`🔍 RAG: "${song}" no encontrada en el catálogo (score: ${ragResult.score.toFixed(2)})`);
+    }
+  }
+
+  const canonicalSong = ragResult.canonical;
+  addRequest(canonicalSong, msg.userId);
   const topSongs = getTop(3).map(([s]) => s);
-  console.log(`🎵 Canción detectada: "${song}"`);
+  console.log(`🎵 Canción detectada: "${canonicalSong}"`);
   console.log(`📊 Top: ${topSongs.join(', ') || 'Ninguna'}`);
 
   if (!enableSendSongResponses) return;
 
   try {
     console.log(`🤖 Generando respuesta para solicitud de canción...`);
-    const response = await generateResponse(`Solicitud recibida: ${song}`, { topSongs });
+    const response = await generateResponse(`Solicitud recibida: ${canonicalSong}`, { topSongs, ragResult });
     if (!response) {
       console.log(`⚠️ No se generó respuesta del LLM`);
       return;
@@ -51,7 +64,7 @@ async function handleSongRequest(song, msg) {
         console.log(`⚠️ No se puede enviar al chat: conexión no disponible o sin autenticación`);
       }
     }
-    saveResponseToCsvIfEnabled(msg.user, `Solicitud recibida: ${song}`, textToSend, sent);
+    saveResponseToCsvIfEnabled(msg.user, `Solicitud recibida: ${canonicalSong}`, textToSend, sent);
   } catch (e) {
     console.error(`❌ Error generando/enviando respuesta:`, e.message);
   }
@@ -87,9 +100,8 @@ async function handleMessage(msg) {
       if (result.type === 'request' && result.song) {
         await handleSongRequest(result.song.toLowerCase(), msg);
       } else if (shouldRespond(msg) && tiktokConnection) {
-        const topSongs = getTop(3).map(([s]) => s);
         console.log(`💭 Mensaje agregado a cola de respuestas: "${msg.text.substring(0, 40)}..."`);
-        queueResponse(msg, topSongs, tiktokConnection, enableAutoSend);
+        queueResponse(msg, [], tiktokConnection, enableAutoSend);
       } else if (msg.text.length > 30) {
         console.log(`ℹ️ Mensaje procesado (no requiere respuesta)`);
       }
@@ -100,9 +112,8 @@ async function handleMessage(msg) {
 
   // Mensajes cortos (≤10 chars): si te etiquetan o nombran (MODERATOR_NAME), responder siempre
   if (msg.text.length <= 10 && messageMentionsModerator(msg.text) && tiktokConnection) {
-    const topSongs = getTop(3).map(([s]) => s);
     console.log(`💭 Te etiquetaron/nombraron (mensaje corto), agregado a cola: "${msg.text.substring(0, 40)}..."`);
-    queueResponse(msg, topSongs, tiktokConnection, enableAutoSend);
+    queueResponse(msg, [], tiktokConnection, enableAutoSend);
   }
 }
 

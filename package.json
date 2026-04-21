@@ -26,6 +26,7 @@
   "description": "Agente para TikTok Live: escucha el chat, detecta pedidos de canciones y responde con Ollama.",
   "dependencies": {
     "dotenv": "^17.2.4",
+    "fastest-levenshtein": "^1.0.16",
     "node-fetch": "^3.3.2",
     "playwright": "^1.49.0",
     "tiktok-live-connector": "^2.1.1-beta1"

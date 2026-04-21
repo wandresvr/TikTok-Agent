@@ -6,6 +6,18 @@ const { checkAvailable, findAvailableModel, waitForRateLimit, getAvailableModels
 let _errorShown = false;
 
 /**
+ * Construye el bloque de contexto RAG para incluir en el prompt del usuario.
+ * @param {{ found: boolean, canonical: string, score: number }} ragResult
+ * @returns {string}
+ */
+function buildRagContext(ragResult) {
+  if (ragResult.found) {
+    return `[REPERTORIO] La canción "${ragResult.canonical}" SÍ está en el repertorio del artista. Confírmalo con entusiasmo y comparte un dato curioso breve sobre ella.`;
+  }
+  return `[REPERTORIO] La canción pedida NO está en el repertorio conocido del artista. Discúlpate amablemente, menciona que no la tienes, y anima al usuario a pedir otra canción.`;
+}
+
+/**
  * Hace la petición HTTP a Ollama con retry en errores 500.
  * @param {string} model - Nombre del modelo
  * @param {string} userMessage - Mensaje del usuario
@@ -60,7 +72,8 @@ Máximo 80 caracteres en "message". Usa emojis. Sé animado y variado.`,
             {
               role: 'user',
               content: `Mensaje del usuario: "${userMessage}"
-${context.topSongs ? `Canciones más pedidas: ${context.topSongs.join(', ')}` : ''}
+${context.topSongs?.length ? `Canciones más pedidas: ${context.topSongs.join(', ')}` : ''}
+${context.ragResult ? buildRagContext(context.ragResult) : ''}
 
 Escribe la respuesta (solo el JSON con "message"). Frase natural para el chat, animada y alegre.`,
             },

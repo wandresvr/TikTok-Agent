@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(timeout 10 node index.js)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(node:*)"
     ]
   }
 }
