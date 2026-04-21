@@ -248,16 +248,21 @@ main();
 
 ## Resumen del plan
 
-| Fase | Qué hace | Impacto | Riesgo |
-|---|---|---|---|
-| 1 | Config central (`config/index.js`) | Elimina `process.env` disperso | Bajo |
-| 2 | Rompe `responseGenerator.js` en 4 módulos | Mayor legibilidad y cohesión | Medio (muchos imports cambian) |
-| 3 | Deduplica handler de canciones en `router.js` | Elimina ~40 líneas repetidas | Bajo |
-| 4 | Extrae `periodicSender.js` | `index.js` queda limpio | Bajo |
-| 5 | Simplifica `index.js` | Orquestador puro ~60 líneas | Bajo (consecuencia de 1–4) |
+| Fase | Qué hace | Impacto | Riesgo | Estado |
+|---|---|---|---|---|
+| 1 | Config central (`config/index.js`) | Elimina `process.env` disperso | Bajo | ✅ Completada |
+| 2 | Rompe `responseGenerator.js` en 4 módulos | Mayor legibilidad y cohesión | Medio (muchos imports cambian) | ✅ Completada |
+| 3 | Deduplica handler de canciones en `router.js` | Elimina ~40 líneas repetidas | Bajo | ✅ Completada |
+| 4 | Extrae `periodicSender.js` | `index.js` queda limpio | Bajo | ✅ Completada |
+| 5 | Simplifica `index.js` | Orquestador puro ~50 líneas | Bajo (consecuencia de 1–4) | ✅ Completada |
 
-**Orden recomendado:** 1 → 3 → 4 → 2 → 5.  
-Empezar por config (Fase 1) porque todas las demás fases se benefician de ella.
+**Orden ejecutado:** 1 → 2 → 3 → 4 → 5.  
+Todas las fases completadas al 2026-04-19.
+
+**Cambios reales de Fase 5:**
+- `checkOllamaOnStart` movida a `llm/ollamaClient.js` (exportada)
+- Banner de inicio + SignConfig + `connectionOptions` extraídos a `config/bootstrap.js`
+- `index.js` pasó de 155 → ~50 líneas como orquestador puro
 
 ---
 

@@ -3,13 +3,16 @@
 // No requiere plan premium de Euler Stream. Necesitas iniciar sesión una vez en el perfil del navegador.
 
 const path = require('path');
+const config = require('../config');
 
 let context = null;
 let page = null;
 
 const NAV_TIMEOUT_MS = 20000;
 const INPUT_TIMEOUT_MS = 12000;
-const USER_DATA_DIR = process.env.BROWSER_USER_DATA_DIR || path.join(process.cwd(), 'browser-profile');
+const USER_DATA_DIR = config.sender.browserDataDir.startsWith('.')
+  ? path.join(process.cwd(), config.sender.browserDataDir.replace(/^\.\//, ''))
+  : config.sender.browserDataDir;
 
 /**
  * Inicia el navegador con perfil persistente (cookies/sesión se guardan).
@@ -20,8 +23,8 @@ async function ensureBrowser() {
 
   const { chromium } = require('playwright');
   context = await chromium.launchPersistentContext(USER_DATA_DIR, {
-    headless: process.env.BROWSER_HEADLESS !== 'false',
-    channel: process.env.BROWSER_CHANNEL || undefined,
+    headless: config.sender.browserHeadless,
+    channel: config.sender.browserChannel,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
     viewport: { width: 1280, height: 800 },
     ignoreDefaultArgs: ['--enable-automation'],

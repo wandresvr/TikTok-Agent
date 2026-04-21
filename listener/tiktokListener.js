@@ -1,8 +1,9 @@
 // listener/tiktokListener.js
 const { TikTokLiveConnection, WebcastEvent } = require('tiktok-live-connector');
 const browserSender = require('../responder/browserSender');
+const config = require('../config');
 
-const USE_BROWSER_SENDER = process.env.USE_BROWSER_SENDER === 'true' || process.env.USE_BROWSER_SENDER === '1';
+const USE_BROWSER_SENDER = config.sender.useBrowser;
 
 function startListener(username, onMessage, options = {}) {
   // Debug: Verificar opciones recibidas
@@ -104,7 +105,7 @@ function startListener(username, onMessage, options = {}) {
   // Contador para verificar que los mensajes siguen llegando durante el live (no solo al inicio)
   let chatMessageCount = 0;
   const LOG_CHAT_EVERY_N = 10; // Log cada N mensajes para no saturar consola
-  const logChatActivity = process.env.LOG_CHAT_ACTIVITY === 'true' || process.env.LOG_CHAT_ACTIVITY === '1';
+  const logChatActivity = config.bot.logChatActivity;
 
   // Escuchar eventos de chat (este listener está activo durante todo el live)
   tiktok.on(WebcastEvent.CHAT, data => {
