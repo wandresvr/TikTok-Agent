@@ -14,9 +14,12 @@ module.exports = {
     campoTipo: 'type',
     campoCancion: 'song',
     instruccionFormato() {
+      // No usar JSON.stringify aquí: song admite null literal (no el string "null"),
+      // y la descripción de tipo ("request|vote|...") tampoco es un valor JSON válido.
+      // Formatear manualmente para que el LLM entienda null como el literal JSON, no como string.
       return (
         `Devuelve EXCLUSIVAMENTE JSON válido con este formato:\n` +
-        `${JSON.stringify(this.ejemplo)}\n\n` +
+        `{ "type": "${this.ejemplo.type}", "song": null | "artista - canción" }\n\n` +
         `Si el mensaje pide una canción, type debe ser "request" y song debe ser "artista - canción". ` +
         `Si no, type es uno de los otros y song es null.`
       );
