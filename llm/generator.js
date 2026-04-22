@@ -33,7 +33,7 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
       const canciones = context.topSongs?.length
         ? resolve('generador.usuario_canciones_pedidas', { lista: context.topSongs.join(', ') })
         : '';
-      const repertorio = context.ragResult ? buildRagContext(context.ragResult) : '';
+      const repertorio = config.rag.enabled && context.ragResult ? buildRagContext(context.ragResult) : '';
 
       const res = await fetch(`${config.ollama.baseUrl}/api/chat`, {
         method: 'POST',
