@@ -35,5 +35,6 @@ module.exports = {
   rag: {
     enabled: process.env.ENABLE_RAG !== 'false',
     threshold: parseFloat(process.env.RAG_THRESHOLD || '0.75'),
+    playlistUrl: process.env.YOUTUBE_PLAYLIST_URL?.trim() || null,
   },
 };

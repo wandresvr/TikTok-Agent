@@ -11,6 +11,22 @@ let _consecutive500Errors = 0;
 const MIN_REQUEST_INTERVAL = 2000; // ms entre peticiones
 const MAX_500_ERRORS = 3;
 
+// --- Mutex para serializar todas las llamadas a Ollama ---
+// Ollama procesa un request a la vez; llamadas concurrentes causan timeouts.
+let _ollamaQueue = Promise.resolve();
+
+async function withOllamaLock(fn) {
+  let release;
+  const prev = _ollamaQueue;
+  _ollamaQueue = new Promise(r => release = r);
+  await prev;
+  try {
+    return await fn();
+  } finally {
+    release();
+  }
+}
+
 // --- Gestión de errores 500 (usada por classifier y generator) ---
 function reportError500() { _consecutive500Errors++; }
 function resetErrors() { _consecutive500Errors = 0; }
@@ -174,6 +190,7 @@ module.exports = {
   checkAvailable,
   findAvailableModel,
   waitForRateLimit,
+  withOllamaLock,
   reportError500,
   resetErrors,
   checkOllamaOnStart,

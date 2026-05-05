@@ -1,6 +1,6 @@
 {
   "clasificador": {
-    "sistema_rol": "Eres un moderador experto de lives musicales. Clasifica mensajes de chat.",
+    "sistema_rol": "Eres un moderador experto de lives musicales. Clasifica mensajes de chat.\nAdemás de detectar pedidos de canciones (request), detecta también cuando alguien hace una PREGUNTA o pide información sobre una canción específica: año, artista, significado de la letra, país de origen, álbum, récord, curiosidad, etc. Eso es tipo 'curiosity'.",
     "usuario": "Clasifica este mensaje. Devuelve solo el JSON (sin explicaciones).\n\nMensaje: \"{texto}\""
   },
   "generador": {
@@ -9,8 +9,13 @@
     "sistema_regla_autenticidad": "REGLA DE ORO: Escribe SIEMPRE la frase tal como se diría en el chat. NUNCA repitas instrucciones literales (ej: no digas \"pedir que pidan canciones\"). Inventa la frase natural y con onda.",
     "sistema_regla_variedad": "VARÍA SIEMPRE: cada respuesta debe sonar DISTINTA. No repitas las mismas frases (evita siempre \"mandá tu tema y dale tap tap\", \"seguinos y dale like\", \"¡Hola! ¿Qué te apetece?\"). Usa otras palabras, otros emojis, otro orden, sinónimos. Sé creativo.",
     "sistema_instrucciones_por_tipo": "Según el mensaje:\n1) \"Solicitud recibida: artista - canción\": Un dato curioso breve sobre esa canción. Varía (año, récord, anécdota, país).\n2) Saludo del público o cuando te nombran: Saludo/respuesta alegre y breve, según el contexto.\n3) Pregunta: Respuesta útil y concisa.\n4) Mensaje para el live: La idea te la dan en el mensaje; redacta esa idea de una forma NUEVA, no uses frases hechas.",
-    "usuario_plantilla": "Mensaje del usuario: \"{mensaje}\"\n{canciones_pedidas}\n{contexto_repertorio}\n\nEscribe la respuesta (solo el JSON con \"message\"). Frase natural para el chat, animada y alegre.",
+    "usuario_plantilla": "Mensaje del usuario: \"{mensaje}\"\n{canciones_pedidas}\n{contexto_repertorio}\n\nEscribe solo la respuesta para el chat, directamente. Sin JSON, sin comillas extra, sin explicaciones. Frase natural, animada y alegre.",
     "usuario_canciones_pedidas": "Canciones más pedidas: {lista}"
+  },
+  "curiosidad": {
+    "con_info": "Un oyente preguntó sobre la canción \"{song}\". Información encontrada en internet: {info}\n\nUsando esa info, comparte un dato curioso breve y animado sobre la canción. Puedes parafrasear o destacar lo más interesante.",
+    "sin_info": "Un oyente preguntó algo sobre la canción \"{song}\". No hay datos web disponibles, pero comparte lo que sepas de ella de forma animada y breve.",
+    "sin_cancion": "Un oyente hizo una pregunta curiosa: \"{pregunta}\". Responde brevemente con entusiasmo si puedes."
   },
   "repertorio": {
     "cancion_encontrada": "[REPERTORIO] La canción \"{canonical}\" SÍ está en el repertorio del artista. Confírmalo con entusiasmo y comparte un dato curioso breve sobre ella.",

@@ -9,41 +9,56 @@ if (dotenvResult.error) {
 
 const config = require('./config');
 const { bootstrap } = require('./config/bootstrap');
-const { startListener } = require('./listener/tiktokListener');
-const { handleMessage, setTikTokConnection } = require('./processor/router');
-const { startNotifier } = require('./responder/notifier');
-const { startPeriodicSender } = require('./responder/periodicSender');
 const { checkOllamaOnStart } = require('./llm/ollamaClient');
 
-const { connectionOptions } = bootstrap();
-
-checkOllamaOnStart().then(() => {});
-
-const connection = startListener(config.tiktok.username, async msg => {
-  try {
-    await handleMessage(msg);
-  } catch (e) {
-    console.error('Error procesando mensaje', e.message);
+async function main() {
+  // Actualizar catálogo de canciones desde YouTube antes de cargar el matcher RAG
+  if (config.rag.enabled && config.rag.playlistUrl) {
+    const { updateSongsFromPlaylist } = require('./rag/playlistUpdater');
+    await updateSongsFromPlaylist(config.rag.playlistUrl);
   }
-}, connectionOptions);
 
-setTikTokConnection(connection);
+  // Cargar módulos que dependen de songs.json (ahora ya actualizado)
+  const { startListener } = require('./listener/tiktokListener');
+  const { handleMessage, setTikTokConnection } = require('./processor/router');
+  const { startNotifier } = require('./responder/notifier');
+  const { startPeriodicSender } = require('./responder/periodicSender');
 
-const notifier = startNotifier();
-const periodic = startPeriodicSender(msg => connection.sendMessage(msg));
+  const { connectionOptions } = bootstrap();
 
-async function cleanup() {
-  console.log('\n🛑 Cerrando conexiones...');
-  periodic.stop();
-  notifier.stop();
-  if (typeof connection.close === 'function') await connection.close();
-  console.log('✅ Conexiones cerradas. Saliendo...');
-  process.exit(0);
+  checkOllamaOnStart().then(() => {});
+
+  const connection = startListener(config.tiktok.username, async msg => {
+    try {
+      await handleMessage(msg);
+    } catch (e) {
+      console.error('Error procesando mensaje', e.message);
+    }
+  }, connectionOptions);
+
+  setTikTokConnection(connection);
+
+  const notifier = startNotifier();
+  const periodic = startPeriodicSender(msg => connection.sendMessage(msg));
+
+  async function cleanup() {
+    console.log('\n🛑 Cerrando conexiones...');
+    periodic.stop();
+    notifier.stop();
+    if (typeof connection.close === 'function') await connection.close();
+    console.log('✅ Conexiones cerradas. Saliendo...');
+    process.exit(0);
+  }
+
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
+  process.on('uncaughtException', (err) => {
+    console.error('❌ Error no capturado:', err);
+    cleanup();
+  });
 }
 
-process.on('SIGINT', cleanup);
-process.on('SIGTERM', cleanup);
-process.on('uncaughtException', (err) => {
-  console.error('❌ Error no capturado:', err);
-  cleanup();
+main().catch(err => {
+  console.error('❌ Error fatal al iniciar:', err);
+  process.exit(1);
 });

@@ -1,7 +1,7 @@
 // llm/generator.js
 // Genera respuestas de chat usando el LLM de Ollama.
 const config = require('../config');
-const { checkAvailable, findAvailableModel, waitForRateLimit, getAvailableModels, reportError500, resetErrors } = require('./ollamaClient');
+const { checkAvailable, findAvailableModel, waitForRateLimit, withOllamaLock, getAvailableModels, reportError500, resetErrors } = require('./ollamaClient');
 const { buildGeneratorSystemPrompt, buildRagContext, resolve } = require('../config/promptLoader');
 
 let _errorShown = false;
@@ -15,18 +15,11 @@ let _errorShown = false;
  * @returns {Promise<string|null>}
  */
 async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2) {
-  console.log(`🔄 [makeRequestWithRetry] Iniciando petición con modelo: ${model}, maxRetries: ${maxRetries}`);
-
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`⏳ [makeRequestWithRetry] Intento ${attempt + 1}/${maxRetries + 1} - Esperando rate limit...`);
       await waitForRateLimit();
 
-      console.log(`📡 [makeRequestWithRetry] Enviando petición a Ollama...`);
       const timeoutMs = config.ollama.timeoutMs;
-      const controller = new AbortController();
-      const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
-
       const temperature = config.ollama.temperature;
       const moderatorName = config.bot.moderatorName;
 
@@ -35,44 +28,42 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
         : '';
       const repertorio = config.rag.enabled && context.ragResult ? buildRagContext(context.ragResult) : '';
 
-      const res = await fetch(`${config.ollama.baseUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: timeoutMs > 0 ? controller.signal : undefined,
-        body: JSON.stringify({
-          model,
-          stream: false,
-          options: { temperature },
-          messages: [
-            {
-              role: 'system',
-              content: buildGeneratorSystemPrompt(moderatorName),
-            },
-            {
-              role: 'user',
-              content: resolve('generador.usuario_plantilla', {
-                mensaje: userMessage,
-                canciones_pedidas: canciones,
-                contexto_repertorio: repertorio,
-              }),
-            },
-          ],
-        }),
+      const res = await withOllamaLock(async () => {
+        const controller = new AbortController();
+        const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
+        try {
+          return await fetch(`${config.ollama.baseUrl}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: timeoutMs > 0 ? controller.signal : undefined,
+            body: JSON.stringify({
+              model,
+              stream: false,
+              options: { temperature, num_ctx: 2048 },
+              messages: [
+                { role: 'system', content: buildGeneratorSystemPrompt(moderatorName) },
+                {
+                  role: 'user',
+                  content: resolve('generador.usuario_plantilla', {
+                    mensaje: userMessage,
+                    canciones_pedidas: canciones,
+                    contexto_repertorio: repertorio,
+                  }),
+                },
+              ],
+            }),
+          });
+        } finally {
+          if (timeoutId) clearTimeout(timeoutId);
+        }
       });
-
-      if (timeoutId) clearTimeout(timeoutId);
-      console.log(`📥 [makeRequestWithRetry] Respuesta recibida: ${res.status} ${res.statusText}`);
 
       if (res.ok) {
         resetErrors();
         _errorShown = false;
         const data = await res.json();
         const raw = (data.message && data.message.content != null) ? String(data.message.content).trim() : '';
-        if (!raw) {
-          const preview = JSON.stringify(data).substring(0, 400);
-          console.warn(`⚠️ [makeRequestWithRetry] Respuesta OK pero sin contenido. Respuesta de Ollama: ${preview}${JSON.stringify(data).length > 400 ? '...' : ''}`);
-          return null;
-        }
+        if (!raw) return null;
         let content = raw;
         try {
           const parsed = JSON.parse(raw);
@@ -80,7 +71,6 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
             content = parsed.message.trim();
           }
         } catch { /* No era JSON, usar raw */ }
-        console.log(`✅ [makeRequestWithRetry] Respuesta: "${content.substring(0, 80)}${content.length > 80 ? '...' : ''}"`);
         return content;
       }
 
@@ -136,8 +126,6 @@ async function makeRequestWithRetry(model, userMessage, context, maxRetries = 2)
  */
 async function generateResponse(userMessage, context = {}) {
   try {
-    console.log(`🔍 [generateResponse] Iniciando generación de respuesta...`);
-
     const ollamaAvailable = await checkAvailable();
     if (!ollamaAvailable) {
       if (!_errorShown) {
@@ -147,7 +135,6 @@ async function generateResponse(userMessage, context = {}) {
       }
       return null;
     }
-    console.log(`✅ [generateResponse] Ollama está disponible`);
 
     const model = await findAvailableModel();
     if (!model) {
@@ -158,17 +145,10 @@ async function generateResponse(userMessage, context = {}) {
       }
       return null;
     }
-    console.log(`✅ [generateResponse] Modelo encontrado: ${model}`);
 
-    const result = await makeRequestWithRetry(model, userMessage, context);
-    if (result) {
-      console.log(`✅ [generateResponse] Respuesta generada exitosamente`);
-    } else {
-      console.log(`⚠️ [generateResponse] No se pudo generar respuesta (makeRequestWithRetry retornó null)`);
-    }
-    return result;
+    return await makeRequestWithRetry(model, userMessage, context);
   } catch (error) {
-    console.error(`❌ [generateResponse] Excepción capturada:`, error.message || error);
+    console.error(`❌ Error generando respuesta:`, error.message || error);
     if (error.code === 'ECONNREFUSED' || error.message?.includes('fetch failed')) {
       if (!_errorShown) {
         console.error(`❌ No se puede conectar a Ollama en ${config.ollama.baseUrl}`);

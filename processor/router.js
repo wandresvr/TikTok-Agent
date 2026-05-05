@@ -9,6 +9,8 @@ const { queueResponse } = require('../llm/responseQueue');
 const { shouldRespond, messageMentionsModerator, isMessageFromModerator } = require('./messageFilter');
 const { formatResponseWithMention, saveResponseToCsvIfEnabled } = require('../utils/format');
 const { matchSong } = require('../rag');
+const { searchSongInfo } = require('../search/songSearch');
+const { resolve } = require('../config/promptLoader');
 
 const { showOtherComments, enableAutoSend, enableSendSongResponses } = config.bot;
 
@@ -70,6 +72,53 @@ async function handleSongRequest(song, msg) {
   }
 }
 
+/**
+ * Busca info de una canción en internet y genera una respuesta curiosa.
+ * Funciona independientemente de ENABLE_RAG.
+ */
+async function handleSongCuriosity(song, originalText, msg) {
+  let userMessage;
+
+  if (song) {
+    console.log(`🔎 Buscando info sobre: "${song}"`);
+    try {
+      const info = await searchSongInfo(song);
+      if (info) {
+        console.log(`📚 Info encontrada (${info.length} chars)`);
+        userMessage = resolve('curiosidad.con_info', { song, info });
+      } else {
+        console.log(`📚 Sin resultados web para: "${song}"`);
+        userMessage = resolve('curiosidad.sin_info', { song });
+      }
+    } catch (e) {
+      console.warn(`⚠️ Error buscando info: ${e.message}`);
+      userMessage = resolve('curiosidad.sin_info', { song });
+    }
+  } else {
+    userMessage = resolve('curiosidad.sin_cancion', { pregunta: originalText });
+  }
+
+  try {
+    console.log(`🤖 Generando respuesta de curiosidad...`);
+    const response = await generateResponse(userMessage, {});
+    if (!response) { console.log(`⚠️ No se generó respuesta del LLM`); return; }
+
+    const textToSend = formatResponseWithMention(response, msg.user, msg.displayName);
+    let sent = false;
+    if (enableAutoSend && tiktokConnection && tiktokConnection.sendMessage) {
+      console.log(`📤 Enviando curiosidad: "${textToSend.substring(0, 60)}..."`);
+      sent = await tiktokConnection.sendMessage(textToSend);
+      if (sent) console.log(`✅ Curiosidad enviada`);
+      else console.log(`❌ No se pudo enviar`);
+    } else {
+      console.log(`💬 Curiosidad (no enviada): "${response}"`);
+    }
+    saveResponseToCsvIfEnabled(msg.user, originalText, textToSend, sent);
+  } catch (e) {
+    console.error(`❌ Error en handleSongCuriosity:`, e.message);
+  }
+}
+
 async function handleMessage(msg) {
   if (isMessageFromModerator(msg)) return;
 
@@ -99,6 +148,8 @@ async function handleMessage(msg) {
 
       if (result.type === 'request' && result.song) {
         await handleSongRequest(result.song.toLowerCase(), msg);
+      } else if (result.type === 'curiosity') {
+        await handleSongCuriosity(result.song || null, msg.text, msg);
       } else if (shouldRespond(msg) && tiktokConnection) {
         console.log(`💭 Mensaje agregado a cola de respuestas: "${msg.text.substring(0, 40)}..."`);
         queueResponse(msg, [], tiktokConnection, enableAutoSend);

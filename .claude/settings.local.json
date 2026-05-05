@@ -3,7 +3,18 @@
     "allow": [
       "Bash(timeout 10 node index.js)",
       "Bash(npm install:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "WebFetch(domain:www.youtube.com)",
+      "WebSearch",
+      "Bash(yt-dlp --version)",
+      "Bash(pip install *)",
+      "Bash(python -m yt_dlp --version)",
+      "Bash(python -m yt_dlp --flat-playlist --print \"%\\(title\\)s\" \"https://www.youtube.com/playlist?list=PL41vzPUOXZ4PsFsSoUs7p1xr25Zc19FhA\")",
+      "Bash(python -m yt_dlp --flat-playlist --print \"%\\(title\\)s|||%\\(uploader\\)s\" \"https://www.youtube.com/playlist?list=PL41vzPUOXZ4PsFsSoUs7p1xr25Zc19FhA\")",
+      "Bash(python -c ' *)",
+      "Bash(python -m yt_dlp --flat-playlist --dump-json \"https://www.youtube.com/playlist?list=PL41vzPUOXZ4PsFsSoUs7p1xr25Zc19FhA\")",
+      "PowerShell(ollama ps 2>&1)",
+      "PowerShell(Get-Content \"$env:LOCALAPPDATA\\\\Ollama\\\\logs\\\\server.log\" -Tail 40 -ErrorAction SilentlyContinue)"
     ]
   }
 }

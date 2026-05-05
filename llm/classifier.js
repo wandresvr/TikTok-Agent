@@ -1,7 +1,7 @@
 // llm/classifier.js
 // Clasifica mensajes de chat con el LLM (request / vote / normal / spam).
 const config = require('../config');
-const { findAvailableModel, waitForRateLimit, reportError500, resetErrors } = require('./ollamaClient');
+const { findAvailableModel, waitForRateLimit, withOllamaLock, reportError500, resetErrors } = require('./ollamaClient');
 const { buildClassifierSystemPrompt, resolve } = require('../config/promptLoader');
 
 let _errorShown = false;
@@ -25,31 +25,29 @@ async function analyze(text) {
     await waitForRateLimit();
 
     const timeoutMs = config.ollama.timeoutMs;
-    const controller = new AbortController();
-    const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
 
-    const res = await fetch(`${config.ollama.baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: timeoutMs > 0 ? controller.signal : undefined,
-      body: JSON.stringify({
-        model,
-        format: 'json',
-        stream: false,
-        messages: [
-          {
-            role: 'system',
-            content: buildClassifierSystemPrompt(),
-          },
-          {
-            role: 'user',
-            content: resolve('clasificador.usuario', { texto: text }),
-          },
-        ],
-      }),
+    const res = await withOllamaLock(async () => {
+      const controller = new AbortController();
+      const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
+      try {
+        return await fetch(`${config.ollama.baseUrl}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: timeoutMs > 0 ? controller.signal : undefined,
+          body: JSON.stringify({
+            model,
+            stream: false,
+            options: { num_ctx: 2048 },
+            messages: [
+              { role: 'system', content: buildClassifierSystemPrompt() },
+              { role: 'user', content: resolve('clasificador.usuario', { texto: text }) },
+            ],
+          }),
+        });
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
     });
-
-    if (timeoutId) clearTimeout(timeoutId);
 
     if (!res.ok) {
       if (res.status === 500) {
@@ -57,7 +55,7 @@ async function analyze(text) {
         let errorBody = '';
         try { errorBody = await res.text(); } catch { /* ignorar */ }
         if (!_errorShown) {
-          console.warn(`⚠️ Error 500 de Ollama (analyze)`);
+          console.warn(`⚠️ Error 500 de Ollama (analyze): ${errorBody.substring(0, 200) || '(sin detalle)'}`);
           if (errorBody && (errorBody.includes('unable to allocate') || errorBody.includes('buffer') || errorBody.includes('memory'))) {
             console.error(`💡 El modelo "${model}" puede requerir más RAM. Prueba: ollama pull llama3.2:1b`);
           }
@@ -77,7 +75,13 @@ async function analyze(text) {
     resetErrors();
     _errorShown = false;
     const data = await res.json();
-    return data.message?.content || JSON.stringify({ type: 'normal', song: null });
+    const raw = data.message?.content || '';
+    // El modelo puede devolver JSON embebido en texto libre cuando no hay format:'json'
+    const match = raw.match(/\{[\s\S]*?\}/);
+    if (match) {
+      try { JSON.parse(match[0]); return match[0]; } catch { /* ignorar */ }
+    }
+    return raw || JSON.stringify({ type: 'normal', song: null });
   } catch (error) {
     if (error.name === 'AbortError') {
       if (!_errorShown) {

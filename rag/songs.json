@@ -1,79 +1,432 @@
 [
-  { "title": "Gasolina", "artist": "Daddy Yankee", "aliases": ["gasolinaaaaa", "gasolina daddy", "la gasolina", "gasolina reggaeton"], "canonical": "Gasolina - Daddy Yankee" },
-  { "title": "Despacito", "artist": "Luis Fonsi", "aliases": ["despasito", "despacio", "despacito fonsi", "despacito bieber"], "canonical": "Despacito - Luis Fonsi" },
-  { "title": "Con Calma", "artist": "Daddy Yankee", "aliases": ["con calma daddy", "calma calma", "con calmaaa"], "canonical": "Con Calma - Daddy Yankee" },
-  { "title": "Danza Kuduro", "artist": "Don Omar", "aliases": ["kuduro", "danza", "danza kuduro don omar", "kudurooo"], "canonical": "Danza Kuduro - Don Omar" },
-  { "title": "Ay Vamos", "artist": "J Balvin", "aliases": ["ay vamos balvin", "vamos vamos", "ay vamooos"], "canonical": "Ay Vamos - J Balvin" },
-  { "title": "Ginza", "artist": "J Balvin", "aliases": ["ginzaaaa", "ginza balvin"], "canonical": "Ginza - J Balvin" },
-  { "title": "Mi Gente", "artist": "J Balvin", "aliases": ["mi gente balvin", "mi genteee", "mi gente willy"], "canonical": "Mi Gente - J Balvin" },
-  { "title": "X (Equis)", "artist": "Nicky Jam & J Balvin", "aliases": ["equis", "la equis", "x balvin", "x nicky"], "canonical": "X (Equis) - Nicky Jam & J Balvin" },
-  { "title": "Hasta el Amanecer", "artist": "Nicky Jam", "aliases": ["hasta el amanecer nicky", "amanecer nicky", "hasta amanecerr"], "canonical": "Hasta el Amanecer - Nicky Jam" },
-  { "title": "El Perdón", "artist": "Nicky Jam", "aliases": ["el perdon nicky", "perdon nicky", "el perdoooon"], "canonical": "El Perdón - Nicky Jam" },
-  { "title": "Trumpets", "artist": "Jason Derulo", "aliases": ["trompetas", "trumpets derulo", "trompetasss"], "canonical": "Trumpets - Jason Derulo" },
-  { "title": "Shape of You", "artist": "Ed Sheeran", "aliases": ["shape of you ed", "shape of you sheeran", "shape"], "canonical": "Shape of You - Ed Sheeran" },
-  { "title": "Blinding Lights", "artist": "The Weeknd", "aliases": ["blinding lights weeknd", "luces cegadoras", "blinding lightsss"], "canonical": "Blinding Lights - The Weeknd" },
-  { "title": "Starboy", "artist": "The Weeknd", "aliases": ["star boy", "starboy weeknd"], "canonical": "Starboy - The Weeknd" },
-  { "title": "Tusa", "artist": "Karol G & Nicki Minaj", "aliases": ["tusaaa", "tusa karol", "tusa nicki"], "canonical": "Tusa - Karol G & Nicki Minaj" },
-  { "title": "Bichota", "artist": "Karol G", "aliases": ["bichotaaa", "bichota karol", "la bichota"], "canonical": "Bichota - Karol G" },
-  { "title": "Provenza", "artist": "Karol G", "aliases": ["provenzaaa", "provenza karol"], "canonical": "Provenza - Karol G" },
-  { "title": "Qlona", "artist": "Karol G & Peso Pluma", "aliases": ["qlona karol", "qlona peso", "qlonaaa"], "canonical": "Qlona - Karol G & Peso Pluma" },
-  { "title": "Bzrp Music Sessions #53", "artist": "Bizarrap & Shakira", "aliases": ["session 53", "bzrp shakira", "shakira session", "puntería", "shakira bizarrap"], "canonical": "BZRP Music Sessions #53 - Bizarrap & Shakira" },
-  { "title": "Te Felicito", "artist": "Shakira & Rauw Alejandro", "aliases": ["te felicito shakira", "felicito rauw", "te felicitooo"], "canonical": "Te Felicito - Shakira & Rauw Alejandro" },
-  { "title": "La Bicicleta", "artist": "Shakira & Carlos Vives", "aliases": ["bicicleta shakira", "la bici", "bicicletaaa"], "canonical": "La Bicicleta - Shakira & Carlos Vives" },
-  { "title": "Waka Waka", "artist": "Shakira", "aliases": ["waka waka shakira", "wakawaka", "waka wakaaa"], "canonical": "Waka Waka - Shakira" },
-  { "title": "El Alfa", "artist": "El Alfa", "aliases": ["alfa", "el alfaaa"], "canonical": "El Alfa - El Alfa" },
-  { "title": "China", "artist": "Anuel AA", "aliases": ["china anuel", "chinaaaa", "china anuel rosalia"], "canonical": "China - Anuel AA" },
-  { "title": "Hawái", "artist": "Maluma", "aliases": ["hawaii maluma", "hawai maluma", "hawaiiiii"], "canonical": "Hawái - Maluma" },
-  { "title": "Felices los 4", "artist": "Maluma", "aliases": ["felices los cuatro", "felices 4", "felices los 4 maluma"], "canonical": "Felices los 4 - Maluma" },
-  { "title": "Dakiti", "artist": "Bad Bunny & Jhay Cortez", "aliases": ["dakitiiii", "dakiti bad bunny", "dakiti jhay"], "canonical": "Dakiti - Bad Bunny & Jhay Cortez" },
-  { "title": "Tití Me Preguntó", "artist": "Bad Bunny", "aliases": ["titi me pregunto", "titi", "titiii", "titi bad bunny"], "canonical": "Tití Me Preguntó - Bad Bunny" },
-  { "title": "Me Porto Bonito", "artist": "Bad Bunny & Chencho Corleone", "aliases": ["me porto bonito bad bunny", "porto bonito", "me porto bonitooo"], "canonical": "Me Porto Bonito - Bad Bunny" },
-  { "title": "Yonaguni", "artist": "Bad Bunny", "aliases": ["yonaguni bad bunny", "yonaguniiii"], "canonical": "Yonaguni - Bad Bunny" },
-  { "title": "Noche de Anoche", "artist": "Bad Bunny & Rosalía", "aliases": ["noche de anoche bunny", "noche anoche rosalia"], "canonical": "Noche de Anoche - Bad Bunny & Rosalía" },
-  { "title": "La Fouine", "artist": "Rauw Alejandro", "aliases": ["fouine rauw", "la fouine rauw"], "canonical": "La Fouine - Rauw Alejandro" },
-  { "title": "Todo de Ti", "artist": "Rauw Alejandro", "aliases": ["todo de ti rauw", "todo de tiiiii", "todo de ti"], "canonical": "Todo de Ti - Rauw Alejandro" },
-  { "title": "Efecto", "artist": "Rauw Alejandro", "aliases": ["efecto rauw", "efectooo"], "canonical": "Efecto - Rauw Alejandro" },
-  { "title": "Ella Quiere Beber", "artist": "Anuel AA", "aliases": ["ella quiere beber anuel", "quiere beber", "ella quiere beberr"], "canonical": "Ella Quiere Beber - Anuel AA" },
-  { "title": "Pepas", "artist": "Farruko", "aliases": ["pepasss", "pepas farruko", "las pepas"], "canonical": "Pepas - Farruko" },
-  { "title": "Levitating", "artist": "Dua Lipa", "aliases": ["levitating dua", "levitatinggg", "dua lipa levitating"], "canonical": "Levitating - Dua Lipa" },
-  { "title": "Don't Start Now", "artist": "Dua Lipa", "aliases": ["dont start now", "don't start dua", "don't start"], "canonical": "Don't Start Now - Dua Lipa" },
-  { "title": "Stay", "artist": "The Kid LAROI & Justin Bieber", "aliases": ["stay bieber", "stay laroi", "stayyyy"], "canonical": "Stay - The Kid LAROI & Justin Bieber" },
-  { "title": "Peaches", "artist": "Justin Bieber", "aliases": ["peaches bieber", "peachesss"], "canonical": "Peaches - Justin Bieber" },
-  { "title": "As It Was", "artist": "Harry Styles", "aliases": ["as it was harry", "as it wasss", "harry styles"], "canonical": "As It Was - Harry Styles" },
-  { "title": "Flowers", "artist": "Miley Cyrus", "aliases": ["flowers miley", "flowersss", "miley flores"], "canonical": "Flowers - Miley Cyrus" },
-  { "title": "Anti-Hero", "artist": "Taylor Swift", "aliases": ["anti hero taylor", "antihero", "antiheroooo"], "canonical": "Anti-Hero - Taylor Swift" },
-  { "title": "Shake It Off", "artist": "Taylor Swift", "aliases": ["shake it off taylor", "shake it offf", "shake off"], "canonical": "Shake It Off - Taylor Swift" },
-  { "title": "Bad Guy", "artist": "Billie Eilish", "aliases": ["bad guy billie", "bad guyyyy", "duh bad guy"], "canonical": "Bad Guy - Billie Eilish" },
-  { "title": "Therefore I Am", "artist": "Billie Eilish", "aliases": ["therefore i am billie", "therefore i amm"], "canonical": "Therefore I Am - Billie Eilish" },
-  { "title": "Montero", "artist": "Lil Nas X", "aliases": ["montero lil nas", "call me by your name lil nas", "monterooo"], "canonical": "Montero - Lil Nas X" },
-  { "title": "Industry Baby", "artist": "Lil Nas X", "aliases": ["industry baby lil nas", "industry babyyyy"], "canonical": "Industry Baby - Lil Nas X" },
-  { "title": "Butter", "artist": "BTS", "aliases": ["butter bts", "butteerr bts"], "canonical": "Butter - BTS" },
-  { "title": "Dynamite", "artist": "BTS", "aliases": ["dynamite bts", "dinamita bts", "dynamiteee"], "canonical": "Dynamite - BTS" },
-  { "title": "Permission to Dance", "artist": "BTS", "aliases": ["permission to dance bts", "ptd bts"], "canonical": "Permission to Dance - BTS" },
-  { "title": "Save Your Tears", "artist": "The Weeknd", "aliases": ["save your tears weeknd", "save your tearsss"], "canonical": "Save Your Tears - The Weeknd" },
-  { "title": "Mood", "artist": "24kGoldn", "aliases": ["mooood", "mood 24k", "mood goldn"], "canonical": "Mood - 24kGoldn" },
-  { "title": "Good 4 U", "artist": "Olivia Rodrigo", "aliases": ["good for you olivia", "good4u", "good 4 u olivia"], "canonical": "Good 4 U - Olivia Rodrigo" },
-  { "title": "Drivers License", "artist": "Olivia Rodrigo", "aliases": ["drivers license olivia", "licencia de conducir", "drivers licenseee"], "canonical": "Drivers License - Olivia Rodrigo" },
-  { "title": "Astronaut in the Ocean", "artist": "Masked Wolf", "aliases": ["astronaut ocean", "astronauta oceano", "astronaut masked wolf"], "canonical": "Astronaut in the Ocean - Masked Wolf" },
-  { "title": "Beggin", "artist": "Maneskin", "aliases": ["beggin maneskin", "begging", "begginnn"], "canonical": "Beggin - Maneskin" },
-  { "title": "Watermelon Sugar", "artist": "Harry Styles", "aliases": ["watermelon sugar harry", "sandia azucar", "watermelon sugarr"], "canonical": "Watermelon Sugar - Harry Styles" },
-  { "title": "Heat Waves", "artist": "Glass Animals", "aliases": ["heat waves glass animals", "heat wavesss"], "canonical": "Heat Waves - Glass Animals" },
-  { "title": "Sweater Weather", "artist": "The Neighbourhood", "aliases": ["sweater weather neighbourhood", "sueter clima", "sweater weatherr"], "canonical": "Sweater Weather - The Neighbourhood" },
-  { "title": "Die For You", "artist": "The Weeknd", "aliases": ["die for you weeknd", "die for youuu"], "canonical": "Die For You - The Weeknd" },
-  { "title": "Creepin", "artist": "Metro Boomin & The Weeknd", "aliases": ["creepin weeknd", "creepinnn", "creepin metro"], "canonical": "Creepin - Metro Boomin & The Weeknd" },
-  { "title": "Unholy", "artist": "Sam Smith & Kim Petras", "aliases": ["unholy sam smith", "unholyyyy", "unholy kim petras"], "canonical": "Unholy - Sam Smith & Kim Petras" },
-  { "title": "Ojitos Lindos", "artist": "Bad Bunny & Bomba Estéreo", "aliases": ["ojitos lindos bad bunny", "ojitos", "ojitos linddos"], "canonical": "Ojitos Lindos - Bad Bunny" },
-  { "title": "La Corriente", "artist": "Bad Bunny & Tony Dize", "aliases": ["la corriente bad bunny", "corriente tony dize"], "canonical": "La Corriente - Bad Bunny & Tony Dize" },
-  { "title": "Moscow Mule", "artist": "Bad Bunny", "aliases": ["moscow mule bunny", "moscow muleee"], "canonical": "Moscow Mule - Bad Bunny" },
-  { "title": "El Apagón", "artist": "Bad Bunny", "aliases": ["el apagon bad bunny", "apagonnn"], "canonical": "El Apagón - Bad Bunny" },
-  { "title": "Despechá", "artist": "Rosalía", "aliases": ["despecha rosalia", "despechaaaaa", "despecha"], "canonical": "Despechá - Rosalía" },
-  { "title": "CHICKEN TERIYAKI", "artist": "Rosalía", "aliases": ["chicken teriyaki rosalia", "teriyaki rosalia"], "canonical": "CHICKEN TERIYAKI - Rosalía" },
-  { "title": "La Fama", "artist": "Rosalía & The Weeknd", "aliases": ["la fama rosalia weeknd", "la famaaaa"], "canonical": "La Fama - Rosalía & The Weeknd" },
-  { "title": "Quevedo Bzrp Session #52", "artist": "Bizarrap & Quevedo", "aliases": ["session 52", "bzrp quevedo", "quevedo session", "quevedo bizarrap", "columbia"], "canonical": "BZRP Music Sessions #52 - Quevedo" },
-  { "title": "Dolce & Gabbana", "artist": "Farruko", "aliases": ["dolce gabbana farruko", "dolce y gabbana"], "canonical": "Dolce & Gabbana - Farruko" },
-  { "title": "Loco Contigo", "artist": "DJ Snake", "aliases": ["loco contigo dj snake", "loco contigooo"], "canonical": "Loco Contigo - DJ Snake" },
-  { "title": "Lean On", "artist": "Major Lazer", "aliases": ["lean on major lazer", "lean onnn"], "canonical": "Lean On - Major Lazer" },
-  { "title": "One Dance", "artist": "Drake", "aliases": ["one dance drake", "one danceee"], "canonical": "One Dance - Drake" },
-  { "title": "God's Plan", "artist": "Drake", "aliases": ["gods plan drake", "plan de dios", "gods plann"], "canonical": "God's Plan - Drake" },
-  { "title": "In My Feelings", "artist": "Drake", "aliases": ["in my feelings drake", "kiki do you love me", "kiki drake"], "canonical": "In My Feelings - Drake" }
+  {
+    "title": "La Camisa Negra",
+    "artist": "Juanes",
+    "aliases": [
+      "la camisa negra",
+      "juanes",
+      "la camisa negra juanes",
+      "juanes la camisa negra"
+    ],
+    "canonical": "La Camisa Negra - Juanes"
+  },
+  {
+    "title": "Cuando Me Enamoro",
+    "artist": "Enrique Iglesias & Juan Luis Guerra",
+    "aliases": [
+      "cuando me enamoro",
+      "enrique iglesias juan luis guerra",
+      "cuando me enamoro enrique iglesias juan luis guerra",
+      "enrique iglesias juan luis guerra cuando me enamoro"
+    ],
+    "canonical": "Cuando Me Enamoro - Enrique Iglesias & Juan Luis Guerra"
+  },
+  {
+    "title": "Almohada",
+    "artist": "José José",
+    "aliases": [
+      "almohada",
+      "jose jose",
+      "almohada jose jose",
+      "jose jose almohada"
+    ],
+    "canonical": "Almohada - José José"
+  },
+  {
+    "title": "Primera Cita",
+    "artist": "Carin León",
+    "aliases": [
+      "primera cita",
+      "carin leon",
+      "primera cita carin leon",
+      "carin leon primera cita"
+    ],
+    "canonical": "Primera Cita - Carin León"
+  },
+  {
+    "title": "Kevin kaarl París Texas",
+    "artist": "",
+    "aliases": [
+      "kevin kaarl paris texas",
+      "kevin kaarl paris"
+    ],
+    "canonical": "Kevin kaarl París Texas"
+  },
+  {
+    "title": "Los Pericos",
+    "artist": "Pupilas lejanas",
+    "aliases": [
+      "los pericos",
+      "pupilas lejanas",
+      "los pericos pupilas lejanas",
+      "pupilas lejanas los pericos"
+    ],
+    "canonical": "Los Pericos - Pupilas lejanas"
+  },
+  {
+    "title": "CAFE TACVBA",
+    "artist": "ERES",
+    "aliases": [
+      "cafe tacvba",
+      "eres",
+      "cafe tacvba eres",
+      "eres cafe tacvba"
+    ],
+    "canonical": "CAFE TACVBA - ERES"
+  },
+  {
+    "title": "Kilómetros",
+    "artist": "Los Caligaris",
+    "aliases": [
+      "kilometros",
+      "los caligaris",
+      "kilometros los caligaris",
+      "los caligaris kilometros"
+    ],
+    "canonical": "Kilómetros - Los Caligaris"
+  },
+  {
+    "title": "Me Quedo Contigo",
+    "artist": "Manu Chao",
+    "aliases": [
+      "me quedo contigo",
+      "manu chao",
+      "me quedo contigo manu chao",
+      "manu chao me quedo contigo"
+    ],
+    "canonical": "Me Quedo Contigo - Manu Chao"
+  },
+  {
+    "title": "INSPECTOR",
+    "artist": "AMARGO ADIOS",
+    "aliases": [
+      "inspector",
+      "amargo adios",
+      "inspector amargo adios",
+      "amargo adios inspector"
+    ],
+    "canonical": "INSPECTOR - AMARGO ADIOS"
+  },
+  {
+    "title": "Dejaría Todo",
+    "artist": "Chayanne",
+    "aliases": [
+      "dejaria todo",
+      "chayanne",
+      "dejaria todo chayanne",
+      "chayanne dejaria todo"
+    ],
+    "canonical": "Dejaría Todo - Chayanne"
+  },
+  {
+    "title": "Y Tú Te Vas",
+    "artist": "Chayanne",
+    "aliases": [
+      "y tu te vas",
+      "chayanne",
+      "y tu te vas chayanne",
+      "chayanne y tu te vas",
+      "y tu te"
+    ],
+    "canonical": "Y Tú Te Vas - Chayanne"
+  },
+  {
+    "title": "Yo Te Amo",
+    "artist": "Chayanne",
+    "aliases": [
+      "yo te amo",
+      "chayanne",
+      "yo te amo chayanne",
+      "chayanne yo te amo"
+    ],
+    "canonical": "Yo Te Amo - Chayanne"
+  },
+  {
+    "title": "Mentira",
+    "artist": "La Ley",
+    "aliases": [
+      "mentira",
+      "la ley",
+      "mentira la ley",
+      "la ley mentira"
+    ],
+    "canonical": "Mentira - La Ley"
+  },
+  {
+    "title": "Vasos Vacíos",
+    "artist": "Los Fabulosos Cadillacs",
+    "aliases": [
+      "vasos vacios",
+      "los fabulosos cadillacs",
+      "vasos vacios los fabulosos cadillacs",
+      "los fabulosos cadillacs vasos vacios"
+    ],
+    "canonical": "Vasos Vacíos - Los Fabulosos Cadillacs"
+  },
+  {
+    "title": "Chau",
+    "artist": "NO TE VA GUSTAR",
+    "aliases": [
+      "chau",
+      "no te va gustar",
+      "chau no te va gustar",
+      "no te va gustar chau"
+    ],
+    "canonical": "Chau - NO TE VA GUSTAR"
+  },
+  {
+    "title": "No Dejes Que...",
+    "artist": "Caifanes",
+    "aliases": [
+      "no dejes que",
+      "caifanes",
+      "no dejes que caifanes",
+      "caifanes no dejes que"
+    ],
+    "canonical": "No Dejes Que... - Caifanes"
+  },
+  {
+    "title": "Afuera",
+    "artist": "Caifanes",
+    "aliases": [
+      "afuera",
+      "caifanes",
+      "afuera caifanes",
+      "caifanes afuera"
+    ],
+    "canonical": "Afuera - Caifanes"
+  },
+  {
+    "title": "MERCEDES SOSA",
+    "artist": "TODO CAMBIA",
+    "aliases": [
+      "mercedes sosa",
+      "todo cambia",
+      "mercedes sosa todo cambia",
+      "todo cambia mercedes sosa"
+    ],
+    "canonical": "MERCEDES SOSA - TODO CAMBIA"
+  },
+  {
+    "title": "Jósean Log",
+    "artist": "Beso",
+    "aliases": [
+      "josean log",
+      "beso",
+      "josean log beso",
+      "beso josean log"
+    ],
+    "canonical": "Jósean Log - Beso"
+  },
+  {
+    "title": "Lo que construimos",
+    "artist": "Natalia Lafourcade",
+    "aliases": [
+      "lo que construimos",
+      "natalia lafourcade",
+      "lo que construimos natalia lafourcade",
+      "natalia lafourcade lo que construimos"
+    ],
+    "canonical": "Lo que construimos - Natalia Lafourcade"
+  },
+  {
+    "title": "Hasta la Raíz",
+    "artist": "NATALIA LAFOURCADE",
+    "aliases": [
+      "hasta la raiz",
+      "natalia lafourcade",
+      "hasta la raiz natalia lafourcade",
+      "natalia lafourcade hasta la raiz"
+    ],
+    "canonical": "Hasta la Raíz - NATALIA LAFOURCADE"
+  },
+  {
+    "title": "Aterciopelados",
+    "artist": "Bolero Falaz",
+    "aliases": [
+      "aterciopelados",
+      "bolero falaz",
+      "aterciopelados bolero falaz",
+      "bolero falaz aterciopelados"
+    ],
+    "canonical": "Aterciopelados - Bolero Falaz"
+  },
+  {
+    "title": "Ni Rosas Ni Juguetes",
+    "artist": "Paulina Rubio",
+    "aliases": [
+      "ni rosas ni juguetes",
+      "paulina rubio",
+      "ni rosas ni juguetes paulina rubio",
+      "paulina rubio ni rosas ni juguetes",
+      "ni rosas ni"
+    ],
+    "canonical": "Ni Rosas Ni Juguetes - Paulina Rubio"
+  },
+  {
+    "title": "LOBO HOMBRE EN PARIS",
+    "artist": "LA UNION",
+    "aliases": [
+      "lobo hombre en paris",
+      "la union",
+      "lobo hombre en paris la union",
+      "la union lobo hombre en paris",
+      "lobo hombre en"
+    ],
+    "canonical": "LOBO HOMBRE EN PARIS - LA UNION"
+  },
+  {
+    "title": "Penelope",
+    "artist": "Diego Torres",
+    "aliases": [
+      "penelope",
+      "diego torres",
+      "penelope diego torres",
+      "diego torres penelope"
+    ],
+    "canonical": "Penelope - Diego Torres"
+  },
+  {
+    "title": "Vilma Palma e Vampiros",
+    "artist": "VOY A VOS",
+    "aliases": [
+      "vilma palma e vampiros",
+      "voy a vos",
+      "vilma palma e vampiros voy a vos",
+      "voy a vos vilma palma e vampiros",
+      "vilma palma e"
+    ],
+    "canonical": "Vilma Palma e Vampiros - VOY A VOS"
+  },
+  {
+    "title": "Profesional",
+    "artist": "Auto rojo",
+    "aliases": [
+      "profesional",
+      "auto rojo",
+      "profesional auto rojo",
+      "auto rojo profesional"
+    ],
+    "canonical": "Profesional - Auto rojo"
+  },
+  {
+    "title": "Vuela, Vuela",
+    "artist": "Magneto",
+    "aliases": [
+      "vuela vuela",
+      "magneto",
+      "vuela vuela magneto",
+      "magneto vuela vuela"
+    ],
+    "canonical": "Vuela, Vuela - Magneto"
+  },
+  {
+    "title": "Los bunkers Bailando solo",
+    "artist": "",
+    "aliases": [
+      "los bunkers bailando solo",
+      "los bunkers bailando"
+    ],
+    "canonical": "Los bunkers Bailando solo"
+  },
+  {
+    "title": "Quieres Ser Mi Amante?",
+    "artist": "",
+    "aliases": [
+      "quieres ser mi amante",
+      "quieres ser mi"
+    ],
+    "canonical": "Quieres Ser Mi Amante?"
+  },
+  {
+    "title": "Dread Mar I",
+    "artist": "Tu Sin Mi",
+    "aliases": [
+      "dread mar i",
+      "tu sin mi",
+      "dread mar i tu sin mi",
+      "tu sin mi dread mar i"
+    ],
+    "canonical": "Dread Mar I - Tu Sin Mi"
+  },
+  {
+    "title": "QUISAZ, QUISAZ, QUISAZ",
+    "artist": "Gaby Moreno",
+    "aliases": [
+      "quisaz quisaz quisaz",
+      "gaby moreno",
+      "quisaz quisaz quisaz gaby moreno",
+      "gaby moreno quisaz quisaz quisaz"
+    ],
+    "canonical": "QUISAZ, QUISAZ, QUISAZ - Gaby Moreno"
+  },
+  {
+    "title": "Ni una sola palabra",
+    "artist": "Paulina Rubio",
+    "aliases": [
+      "ni una sola palabra",
+      "paulina rubio",
+      "ni una sola palabra paulina rubio",
+      "paulina rubio ni una sola palabra",
+      "ni una sola"
+    ],
+    "canonical": "Ni una sola palabra - Paulina Rubio"
+  },
+  {
+    "title": "Nada Valgo Sin Tu Amor",
+    "artist": "Juanes",
+    "aliases": [
+      "nada valgo sin tu amor",
+      "juanes",
+      "nada valgo sin tu amor juanes",
+      "juanes nada valgo sin tu amor",
+      "nada valgo sin"
+    ],
+    "canonical": "Nada Valgo Sin Tu Amor - Juanes"
+  },
+  {
+    "title": "Antología",
+    "artist": "Shakira",
+    "aliases": [
+      "antologia",
+      "shakira",
+      "antologia shakira",
+      "shakira antologia"
+    ],
+    "canonical": "Antología - Shakira"
+  },
+  {
+    "title": "Inolvidable",
+    "artist": "Reik",
+    "aliases": [
+      "inolvidable",
+      "reik",
+      "inolvidable reik",
+      "reik inolvidable"
+    ],
+    "canonical": "Inolvidable - Reik"
+  },
+  {
+    "title": "Mi Historia Entre Tus Dedos",
+    "artist": "Gianluca Grignani",
+    "aliases": [
+      "mi historia entre tus dedos",
+      "gianluca grignani",
+      "mi historia entre tus dedos gianluca grignani",
+      "gianluca grignani mi historia entre tus dedos",
+      "mi historia entre"
+    ],
+    "canonical": "Mi Historia Entre Tus Dedos - Gianluca Grignani"
+  },
+  {
+    "title": "Bella Traicion",
+    "artist": "Belinda",
+    "aliases": [
+      "bella traicion",
+      "belinda",
+      "bella traicion belinda",
+      "belinda bella traicion"
+    ],
+    "canonical": "Bella Traicion - Belinda"
+  }
 ]
