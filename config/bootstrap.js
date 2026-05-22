@@ -12,7 +12,8 @@ const config = require('./index');
  */
 function bootstrap() {
   const { username, sessionId, ttTargetIdc } = config.tiktok;
-  const { eulerApiKey, useBrowser, browserDataDir } = config.sender;
+  const { eulerApiKey, useBrowser } = config.sender;
+  const debugPort = process.env.BROWSER_DEBUG_PORT || 9222;
 
   if (!config.bot.enableAutoSend) {
     console.log('🔇 Envío automático de mensajes deshabilitado (ENABLE_AUTO_SEND=false)\n');
@@ -24,9 +25,9 @@ function bootstrap() {
   console.log(`📱 Usuario objetivo: @${username}`);
   console.log(`🌐 URL del live: https://www.tiktok.com/@${username}/live`);
 
-  if (useBrowser) {
-    console.log(`📱 Envío de mensajes: screen scraping (navegador). Perfil: ${browserDataDir}`);
-    console.log(`   💡 Primera vez: se abrirá el navegador; inicia sesión en TikTok y luego los mensajes se enviarán desde ahí.`);
+  if (useBrowser && config.bot.enableAutoSend) {
+    console.log(`📱 Envío de mensajes: Edge via CDP (puerto ${debugPort})`);
+    console.log(`   💡 Edge debe estar abierto con: msedge.exe --remote-debugging-port=${debugPort}`);
   }
 
   // Euler Stream API Key
@@ -58,7 +59,7 @@ function bootstrap() {
       : '💬 Estado: Solo LECTURA (falta EULER_API_KEY para enviar mensajes)');
   } else {
     console.log('⚠️ Autenticación TikTok: No configurada');
-    console.log('💡 Para enviar mensajes, configura TIKTOK_SESSION_ID y TIKTOK_TT_TARGET_IDC en .env');
+    console.log('💡 Para enviar mensajes, abre Edge con --remote-debugging-port y configura BROWSER_DEBUG_PORT en .env');
     console.log('📖 Estado: Solo LECTURA (no puede enviar mensajes)');
   }
   console.log('='.repeat(60) + '\n');

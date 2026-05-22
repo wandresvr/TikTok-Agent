@@ -4,6 +4,17 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 
+// Red de seguridad: trunca a maxLen Unicode code points para no superar el límite del chat.
+// El prompt ya instruye al LLM a mantenerse bajo 110 chars; esta función solo actúa en casos extremos.
+function truncateTo(str, maxLen) {
+  const chars = [...str]; // itera por code point, no por UTF-16 unit
+  if (chars.length <= maxLen) return str;
+  let cut = maxLen;
+  while (cut > 0 && chars[cut - 1] !== ' ') cut--;
+  if (cut === 0) cut = maxLen;
+  return chars.slice(0, cut).join('').trimEnd();
+}
+
 /**
  * Escapa un valor para CSV (separador ;, comillas y saltos de línea).
  */
@@ -19,14 +30,14 @@ function escapeCsvValue(val) {
  */
 function formatResponseWithMention(response, username, displayName) {
   if (!response) return response;
-  if (!config.bot.enableMentionResponse) return response;
+  if (!config.bot.enableMentionResponse) return truncateTo(response, 180);
   const mention = (displayName && typeof displayName === 'string' && displayName.trim())
     ? displayName.trim()
     : (username && typeof username === 'string' && username.trim())
       ? username.trim()
       : '';
-  if (!mention) return response;
-  return `@${mention} ${response}`;
+  if (!mention) return truncateTo(response, 180);
+  return truncateTo(`@${mention} ${response}`, 180);
 }
 
 /**

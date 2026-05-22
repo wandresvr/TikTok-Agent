@@ -26,6 +26,12 @@ async function main() {
 
   const { connectionOptions } = bootstrap();
 
+  // Conectar al Edge via CDP al inicio si el envío automático está habilitado
+  if (config.bot.enableAutoSend && config.sender.useBrowser) {
+    const browserSender = require('./responder/browserSender');
+    await browserSender.ensureBrowser();
+  }
+
   checkOllamaOnStart().then(() => {});
 
   const connection = startListener(config.tiktok.username, async msg => {

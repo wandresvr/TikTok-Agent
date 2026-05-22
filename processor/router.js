@@ -47,7 +47,7 @@ async function handleSongRequest(song, msg) {
 
   try {
     console.log(`🤖 Generando respuesta para solicitud de canción...`);
-    const response = await generateResponse(`Solicitud recibida: ${canonicalSong}`, { topSongs, ragResult });
+    const response = await generateResponse(`Solicitud recibida: ${canonicalSong}`, { ragResult });
     if (!response) {
       console.log(`⚠️ No se generó respuesta del LLM`);
       return;

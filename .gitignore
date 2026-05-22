@@ -16,3 +16,6 @@ responses.csv
 *.log
 .DS_Store
 Thumbs.db
+/browser-profile-edge-backup
+/investigation
+*.png

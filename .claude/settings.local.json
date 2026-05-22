@@ -14,7 +14,22 @@
       "Bash(python -c ' *)",
       "Bash(python -m yt_dlp --flat-playlist --dump-json \"https://www.youtube.com/playlist?list=PL41vzPUOXZ4PsFsSoUs7p1xr25Zc19FhA\")",
       "PowerShell(ollama ps 2>&1)",
-      "PowerShell(Get-Content \"$env:LOCALAPPDATA\\\\Ollama\\\\logs\\\\server.log\" -Tail 40 -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Content \"$env:LOCALAPPDATA\\\\Ollama\\\\logs\\\\server.log\" -Tail 40 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\wilso\\\\OneDrive\\\\Documents\\\\GitHub\\\\TikTok-Agent\\\\investigation\\\\output\" -Recurse -File | Select-Object Name, @{N='SizeKB';E={[math]::Round\\($_.Length/1KB,1\\)}}, LastWriteTime | Format-Table -AutoSize)",
+      "Bash(python3 -c ' *)",
+      "Bash(findstr -i \"browser\\\\|sender\\\\|headless\\\\|channel\")",
+      "Bash(ls \"C:\\\\Users\\\\wilso\\\\AppData\\\\Local\\\\Microsoft\\\\Edge\\\\User Data\\\\Default\\\\Network\\\\\" 2>/dev/null || echo \"not found\" *)",
+      "Read(//c/Users/wilso/AppData/Local/Microsoft/Edge/User Data/Default/Network\" 2>/dev/**)",
+      "PowerShell(Get-Process msedge -ErrorAction SilentlyContinue)",
+      "PowerShell(netstat -ano)",
+      "PowerShell(Get-Process msedge)",
+      "PowerShell(Start-Process $edgePath -ArgumentList \"--remote-debugging-port=9222\")",
+      "PowerShell($edgePath = \"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\")",
+      "Bash(grep -rn \"browserSender\\\\|require.*browser\\\\|ensureBrowser\" \"c:\\\\Users\\\\wilso\\\\OneDrive\\\\Documents\\\\GitHub\\\\TikTok-Agent\\\\\" --include=\"*.js\" | grep -v node_modules | grep -v \"browser-profile\")",
+      "Read(//c/Users/wilso/OneDrive/Documents/GitHub/**)",
+      "Bash(ENABLE_AUTO_SEND=false node -e ' *)",
+      "Bash(du -sh browser-profile/)",
+      "Bash(powershell -c \"\\(Get-ChildItem -Recurse 'browser-profile' | Measure-Object -Property Length -Sum\\).Sum / 1MB\")"
     ]
   }
 }

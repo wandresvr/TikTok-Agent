@@ -17,9 +17,6 @@ module.exports = {
   },
   sender: {
     useBrowser: process.env.USE_BROWSER_SENDER === 'true' || process.env.USE_BROWSER_SENDER === '1',
-    browserDataDir: process.env.BROWSER_USER_DATA_DIR || './browser-profile',
-    browserHeadless: process.env.BROWSER_HEADLESS !== 'false',
-    browserChannel: process.env.BROWSER_CHANNEL || undefined,
     eulerApiKey: process.env.EULER_API_KEY?.trim() || null,
   },
   bot: {

@@ -62,6 +62,7 @@ function buildGeneratorSystemPrompt(moderatorName) {
     identidad,
     get('generador.sistema_regla_autenticidad'),
     get('generador.sistema_regla_variedad'),
+    get('generador.sistema_regla_longitud'),
     get('generador.sistema_instrucciones_por_tipo'),
     schemas.generador.instruccionFormato(),
   ]

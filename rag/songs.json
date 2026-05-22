@@ -428,5 +428,84 @@
       "belinda bella traicion"
     ],
     "canonical": "Bella Traicion - Belinda"
+  },
+  {
+    "title": "Jósean Log",
+    "artist": "Doma",
+    "aliases": [
+      "josean log",
+      "doma",
+      "josean log doma",
+      "doma josean log"
+    ],
+    "canonical": "Jósean Log - Doma"
+  },
+  {
+    "title": "Me Gustas",
+    "artist": "Joan Sebastian",
+    "aliases": [
+      "me gustas",
+      "joan sebastian",
+      "me gustas joan sebastian",
+      "joan sebastian me gustas"
+    ],
+    "canonical": "Me Gustas - Joan Sebastian"
+  },
+  {
+    "title": "Molinos de viento",
+    "artist": "Mago de Oz",
+    "aliases": [
+      "molinos de viento",
+      "mago de oz",
+      "molinos de viento mago de oz",
+      "mago de oz molinos de viento"
+    ],
+    "canonical": "Molinos de viento - Mago de Oz"
+  },
+  {
+    "title": "Can't Help Falling in Love ( Piano with Upright Bass",
+    "artist": "Elvis Presley",
+    "aliases": [
+      "can t help falling in love piano with upright bass",
+      "elvis presley",
+      "can t help falling in love piano with upright bass elvis presley",
+      "elvis presley can t help falling in love piano with upright bass",
+      "can t help"
+    ],
+    "canonical": "Can't Help Falling in Love ( Piano with Upright Bass - Elvis Presley"
+  },
+  {
+    "title": "Me vas a extrañar acustico () (PRODUCCIONES ROBERTO",
+    "artist": "Carolina Ross",
+    "aliases": [
+      "me vas a extranar acustico producciones roberto",
+      "carolina ross",
+      "me vas a extranar acustico producciones roberto carolina ross",
+      "carolina ross me vas a extranar acustico producciones roberto",
+      "me vas a"
+    ],
+    "canonical": "Me vas a extrañar acustico () (PRODUCCIONES ROBERTO - Carolina Ross"
+  },
+  {
+    "title": "Karaokanta",
+    "artist": "Si no te hubieras ido",
+    "aliases": [
+      "karaokanta",
+      "si no te hubieras ido",
+      "karaokanta si no te hubieras ido",
+      "si no te hubieras ido karaokanta"
+    ],
+    "canonical": "Karaokanta - Si no te hubieras ido"
+  },
+  {
+    "title": "Tu Carcel",
+    "artist": "Enanitos Verdes",
+    "aliases": [
+      "tu carcel",
+      "enanitos verdes",
+      "tu carcel enanitos verdes",
+      "enanitos verdes tu carcel"
+    ],
+    "canonical": "Tu Carcel - Enanitos Verdes"
   }
 ]
