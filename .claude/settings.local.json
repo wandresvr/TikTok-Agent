@@ -29,7 +29,9 @@
       "Read(//c/Users/wilso/OneDrive/Documents/GitHub/**)",
       "Bash(ENABLE_AUTO_SEND=false node -e ' *)",
       "Bash(du -sh browser-profile/)",
-      "Bash(powershell -c \"\\(Get-ChildItem -Recurse 'browser-profile' | Measure-Object -Property Length -Sum\\).Sum / 1MB\")"
+      "Bash(powershell -c \"\\(Get-ChildItem -Recurse 'browser-profile' | Measure-Object -Property Length -Sum\\).Sum / 1MB\")",
+      "Bash(ollama list *)",
+      "Bash(ollama pull *)"
     ]
   }
 }

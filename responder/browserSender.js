@@ -1,8 +1,11 @@
 // responder/browserSender.js
-// Envía mensajes al chat de TikTok Live conectándose al Edge ya abierto via CDP.
+// Envía mensajes al chat de TikTok Live conectándose al navegador ya abierto via CDP.
 //
-// Requisito: Edge debe estar corriendo con --remote-debugging-port=9222
-//   "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --remote-debugging-port=9222
+// Requisito: el navegador debe estar corriendo con --remote-debugging-port=<BROWSER_DEBUG_PORT>
+//   Mac/Linux (Chrome): /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+//   Windows  (Edge):    "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --remote-debugging-port=9222
+//   Windows  (Chrome):  "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222
+//   Configura BROWSER_EXECUTABLE en .env para personalizar la ruta.
 //
 // Mecanismo de sesión TikTok Live:
 //   1. La página del live llama POST /webcast/room/enter/ al cargar.
@@ -26,17 +29,28 @@ const NAV_TIMEOUT_MS = 20000;
 const ROOM_ENTRY_WAIT_MS = 25000;
 const CHECK_ALIVE_STALE_MS = 30000;
 
+function _browserLaunchHint() {
+  const port = process.env.BROWSER_DEBUG_PORT || 9222;
+  const custom = process.env.BROWSER_EXECUTABLE;
+  if (custom) return `"${custom}" --remote-debugging-port=${port}`;
+  if (process.platform === 'darwin') {
+    return `/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=${port}`;
+  }
+  return `"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe" --remote-debugging-port=${port}`;
+}
+
 async function ensureBrowser() {
   if (browser && browser.isConnected()) return;
 
   const { chromium } = require('playwright');
   try {
     browser = await chromium.connectOverCDP(CDP_URL);
-    console.log('🔗 [Browser] Conectado al Edge via CDP (' + CDP_URL + ')');
+    console.log('🔗 [Browser] Conectado via CDP (' + CDP_URL + ')');
   } catch (err) {
     throw new Error(
-      `No se pudo conectar a Edge en ${CDP_URL}.\n` +
-      `Abre Edge con: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe" --remote-debugging-port=9222\n` +
+      `No se pudo conectar al navegador en ${CDP_URL}.\n` +
+      `Ábrelo con: ${_browserLaunchHint()}\n` +
+      `O configura BROWSER_EXECUTABLE en .env con la ruta a tu navegador.\n` +
       `Error: ${err.message}`
     );
   }
